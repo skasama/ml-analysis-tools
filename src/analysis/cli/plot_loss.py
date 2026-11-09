@@ -22,20 +22,22 @@ def plot_training_loss(
     epoch,
     loss,
     *,
-    use_thin_line,
+    use_dense_style,
     alpha,
     label="Train loss",
 ):
-    if use_thin_line:
+    if use_dense_style:
+        # Many training points: plot all points as a semi-transparent line.
         ax.plot(
             epoch,
             loss,
             color="tab:blue",
-            alpha=alpha,
             linewidth=1.5,
+            alpha=alpha,
             label=label,
         )
     else:
+        # Few training points: connect points and show markers.
         ax.plot(
             epoch,
             loss,
@@ -135,10 +137,13 @@ def main():
     print(f"Best validation loss = {val_loss[best]:.6g}")
     print(f"Best epoch = {val_epoch[best]:.3f}")
 
-    use_thin_train_line = len(train_epoch) >= 2 * len(val_epoch)
+    use_dense_train_style = len(train_epoch) >= 2 * len(val_epoch)
 
-    if use_thin_train_line:
-        print("Training style: thin line (training points >= 2 x validation points)")
+    if use_dense_train_style:
+        print(
+            "Training style: semi-transparent line "
+            "(training points >= 2 x validation points)"
+        )
     else:
         print(
             "Training style: line with markers "
@@ -175,7 +180,7 @@ def main():
         ax_full,
         train_epoch,
         train_loss_log,
-        use_thin_line=use_thin_train_line,
+        use_dense_style=use_dense_train_style,
         alpha=0.35,
     )
 
@@ -206,7 +211,7 @@ def main():
         ax_zoom,
         train_epoch,
         train_loss,
-        use_thin_line=use_thin_train_line,
+        use_dense_style=use_dense_train_style,
         alpha=0.45,
     )
 
