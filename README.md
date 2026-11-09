@@ -111,6 +111,41 @@ python scripts/save_event_display_3d.py \
   --output plots/event0.png
 ```
 
+## Comparing Analysis Methods
+
+Results from ML and non-ML methods can be represented with the same
+`MethodResult` object. Event IDs are required so that methods can either be
+checked for identical ordering or aligned on their common event set.
+
+```python
+import numpy as np
+
+from analysis.metrics import compare_metrics, regression_metrics
+from analysis.results import MethodResult, align_by_event_id
+
+ml = MethodResult(
+    method="ml",
+    task="energy_regression",
+    predictions=np.load("ml/predictions.npy"),
+    targets=np.load("ml/targets.npy"),
+    event_ids=np.load("ml/event_ids.npy"),
+)
+baseline = MethodResult(
+    method="baseline",
+    task="energy_regression",
+    predictions=np.load("baseline/predictions.npy"),
+    targets=np.load("baseline/targets.npy"),
+    event_ids=np.load("baseline/event_ids.npy"),
+)
+
+ml, baseline = align_by_event_id(ml, baseline)
+metrics = compare_metrics((ml, baseline), regression_metrics)
+```
+
+`align_results` should be used when identical event ordering is required;
+`align_by_event_id` explicitly selects the common event-ID intersection and
+reorders each method before calculating metrics.
+
 ## Development
 
 Install the locked dependencies, including development tools, with:
