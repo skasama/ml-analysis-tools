@@ -1,6 +1,8 @@
 import numpy as np
 import pytest
 
+from analysis.baselines import constant_prediction
+from analysis.comparison import compare_methods
 from analysis.metrics import (
     classification_metrics,
     regression_metrics,
@@ -8,6 +10,7 @@ from analysis.metrics import (
     resolution68,
 )
 from analysis.results import MethodResult, align_by_event_id, align_results
+from analysis.uncertainty import bootstrap_metric
 
 
 def result(method, event_ids, predictions, targets):
@@ -72,3 +75,29 @@ def test_residual_profile_returns_binned_statistics():
     np.testing.assert_allclose(biases, [1.0, 3.0])
     np.testing.assert_allclose(resolutions, [1.0, 3.0])
     np.testing.assert_array_equal(counts, [2, 2])
+
+
+def test_comparison_aligns_methods_before_calculating_metrics():
+    first = result("ml", [1, 2], [1.0, 2.0], [1.0, 2.0])
+    second = result("baseline", [2, 1], [4.0, 3.0], [2.0, 1.0])
+    metrics = compare_methods(
+        (first, second),
+        lambda predictions, targets: float(np.mean(np.abs(predictions - targets))),
+    )
+    assert metrics == {"ml": 0.0, "baseline": 2.0}
+
+
+def test_bootstrap_metric_returns_confidence_interval():
+    result = bootstrap_metric(
+        [0.0, 1.0, 2.0],
+        [0.0, 0.0, 0.0],
+        lambda predictions, targets: float(np.mean(predictions - targets)),
+        n_samples=20,
+        seed=1,
+    )
+    assert result["estimate"] == pytest.approx(1.0)
+    assert result["lower"] <= result["estimate"] <= result["upper"]
+
+
+def test_constant_prediction_uses_target_mean():
+    np.testing.assert_array_equal(constant_prediction([1.0, 3.0]), [2.0, 2.0])
