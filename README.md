@@ -1,14 +1,18 @@
-# analysis_tools
+# Analysis Tools
 
-入力ファイルを自動検索せず、コマンドラインで明示的に指定する構成です。相対パスは各 `--run-dir` を基準に解決されます。
+This repository provides analysis tools that use explicitly specified input files instead of automatically searching for them.
 
-## Apptainerでの利用
+Relative input paths are resolved from the directory specified by `--run-dir`.
+
+## Running in Apptainer
+
+Add the local `src` directory to `PYTHONPATH`:
 
 ```bash
 export PYTHONPATH="$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 ```
 
-## Loss
+## Plotting Training Loss
 
 ```bash
 python scripts/plot_loss.py \
@@ -19,9 +23,24 @@ python scripts/plot_loss.py \
   --output-file loss_curve_readable.png
 ```
 
-## 共通のrun出力
+The paths specified by `--train-log` and `--val-log` are resolved relative to `--run-dir`.
 
-分類、vertex、directionでは次の形式です。
+In the example above, the following files are used:
+
+```text
+/path/to/run/outputs/log_train_0.csv
+/path/to/run/outputs/log_val.csv
+```
+
+## Common Run Outputs
+
+The classification, vertex-regression, and direction-regression scripts use the following input options:
+
+- `--predictions`: prediction array
+- `--targets`: target array
+- `--indices`: event-index array
+
+For example:
 
 ```bash
 python scripts/plot_direction_regression.py \
@@ -32,15 +51,51 @@ python scripts/plot_direction_regression.py \
   --output-dir plots/direction
 ```
 
-`plot_classification.py`と`plot_vertex_regression.py`も同じ `--predictions`, `--targets`, `--indices` を受け取ります。
+The same options are available for:
 
-## 複数runのresolution
+```text
+plot_classification.py
+plot_vertex_regression.py
+```
 
-`plot_resolution_dependencies.py`では、各runに対して `--vertex-predictions`、`--direction-predictions`、`--energy-predictions` のように個別指定します。対応するtargetsとindicesも同様です。
+## Resolution Dependencies Using Multiple Runs
 
-## 3D event display
+`plot_resolution_dependencies.py` combines the outputs of the vertex, direction, and energy regression runs.
 
-HDF5 dataset名も明示できます。
+The input files must be specified separately for each run using options such as:
+
+- `--vertex-predictions`
+- `--vertex-targets`
+- `--vertex-indices`
+- `--direction-predictions`
+- `--direction-targets`
+- `--direction-indices`
+- `--energy-predictions`
+- `--energy-targets`
+- `--energy-indices`
+
+Example:
+
+```bash
+python scripts/plot_resolution_dependencies.py \
+  --vertex-run /path/to/vertex_run \
+  --vertex-predictions outputs/preds.npy \
+  --vertex-targets outputs/targets.npy \
+  --vertex-indices outputs/indices.npy \
+  --direction-run /path/to/direction_run \
+  --direction-predictions outputs/preds.npy \
+  --direction-targets outputs/targets.npy \
+  --direction-indices outputs/indices.npy \
+  --energy-run /path/to/energy_run \
+  --energy-predictions outputs/preds.npy \
+  --energy-targets outputs/targets.npy \
+  --energy-indices outputs/indices.npy \
+  --output-dir plots/resolution_dependencies
+```
+
+## 3D Event Display
+
+The HDF5 dataset names and geometry-array key can also be specified explicitly.
 
 ```bash
 python scripts/save_event_display_3d.py \
@@ -51,5 +106,7 @@ python scripts/save_event_display_3d.py \
   --time-dataset hit_time \
   --charge-dataset hit_charge \
   --position-key position \
-  --event 0 --channel charge --output plots/event0.png
+  --event 0 \
+  --channel charge \
+  --output plots/event0.png
 ```
