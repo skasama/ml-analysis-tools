@@ -30,8 +30,8 @@ def plot_validation_loss(
             epoch,
             loss,
             color="tab:orange",
-            linewidth=1.0,
-            alpha=0.5,
+            linewidth=0.8,
+            alpha=0.45,
             label=label,
         )
     else:
@@ -39,8 +39,9 @@ def plot_validation_loss(
             epoch,
             loss,
             color="tab:orange",
-            linewidth=1.0,
-            alpha=0.5,
+            linewidth=1.5,
+            marker="o",
+            markersize=4,
             label=label,
         )
 
@@ -114,14 +115,21 @@ def main():
     print(f"Best validation loss = {val_loss[best]:.6g}")
     print(f"Best epoch = {val_epoch[best]:.3f}")
 
-    use_thin_val_line = len(val_epoch) >= 2 * len(train_epoch)
+    n_train_epochs = len(np.unique(train_epoch))
+    n_val_points = len(val_epoch)
+
+    use_thin_val_line = n_val_points >= 2 * n_train_epochs
+
+    print(f"Training log points: {len(train_epoch)}")
+    print(f"Training epochs: {n_train_epochs}")
+    print(f"Validation points: {n_val_points}")
 
     if use_thin_val_line:
-        print("Validation style: thin line (validation points >= 2 x training points)")
+        print("Validation style: thin line (validation points >= 2 x training epochs)")
     else:
         print(
             "Validation style: line with markers "
-            "(validation points < 2 x training points)"
+            "(validation points < 2 x training epochs)"
         )
 
     positive_losses = np.concatenate(
