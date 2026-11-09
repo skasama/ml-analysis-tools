@@ -1,19 +1,6 @@
 import numpy as np
 
-def cylindrical_radius(vertices):
-    """Return the cylindrical radius R = sqrt(x^2 + y^2)."""
-    vertices = np.asarray(vertices, dtype=float)
-
-    if vertices.ndim != 2 or vertices.shape[1] != 3:
-        raise ValueError(
-            "vertices must have shape (N, 3), "
-            f"but received {vertices.shape}."
-        )
-
-    return np.hypot(
-        vertices[:, 0],
-        vertices[:, 1],
-    )
+EPSILON = 1.0e-12
 
 
 def prepare_xyz(values, name="values"):
@@ -21,33 +8,57 @@ def prepare_xyz(values, name="values"):
     values = np.asarray(values, dtype=float)
 
     if values.ndim != 2 or values.shape[1] != 3:
-        raise ValueError(
-            f"{name} must have shape (N, 3), "
-            f"but received {values.shape}."
-        )
+        raise ValueError(f"{name} must have shape (N, 3), but received {values.shape}.")
 
     return values
 
 
+def cylindrical_radius(vertices):
+    """Return the cylindrical radius R = sqrt(x^2 + y^2)."""
+    vertices = prepare_xyz(
+        vertices,
+        "vertices",
+    )
+
+    return np.hypot(
+        vertices[:, 0],
+        vertices[:, 1],
+    )
+
+
 def unit(vectors):
     """Normalize vectors to unit length."""
-    vectors = prepare_xyz(vectors, "vectors")
+    vectors = prepare_xyz(
+        vectors,
+        "vectors",
+    )
     norms = np.linalg.norm(
         vectors,
         axis=1,
         keepdims=True,
     )
 
-    if np.any(norms == 0):
-        raise ValueError(
-            "Zero-length direction vector found."
-        )
+    if np.any(norms <= EPSILON):
+        n_invalid = int(np.sum(norms[:, 0] <= EPSILON))
+        raise ValueError(f"Found {n_invalid} zero-length direction vectors.")
 
     return vectors / norms
 
 
 def opening_angle(true, pred):
     """Return the opening angle in degrees."""
+    true = prepare_xyz(
+        true,
+        "true",
+    )
+    pred = prepare_xyz(
+        pred,
+        "pred",
+    )
+
+    if len(true) != len(pred):
+        raise ValueError("true and pred must have the same number of events.")
+
     true_unit = unit(true)
     pred_unit = unit(pred)
 
@@ -67,34 +78,25 @@ def opening_angle(true, pred):
     )
 
 
-def cylindrical_radius(vertices):
-    """Return R = sqrt(x^2 + y^2)."""
-    vertices = prepare_xyz(
-        vertices,
-        "vertices",
-    )
-
-    return np.hypot(
-        vertices[:, 0],
-        vertices[:, 1],
-    )
-
-
 def wall(
     vertices,
     radius=1690.0,
     half_height=1810.0,
 ):
-    """Return signed distance to the nearest cylindrical boundary."""
-    vertices = np.asarray(vertices, dtype=float)
+    """Return signed distance to the nearest cylindrical boundary.
+
+    Positive values indicate vertices inside the cylinder.
+    Negative values indicate vertices outside the cylinder.
+    """
+    vertices = prepare_xyz(
+        vertices,
+        "vertices",
+    )
 
     radial_gap = radius - cylindrical_radius(vertices)
     vertical_gap = half_height - np.abs(vertices[:, 2])
 
-    inside = (
-        (radial_gap >= 0)
-        & (vertical_gap >= 0)
-    )
+    inside = (radial_gap >= 0.0) & (vertical_gap >= 0.0)
 
     distance = np.minimum(
         np.abs(radial_gap),
@@ -114,18 +116,20 @@ def towall(
     radius=1690.0,
     half_height=1810.0,
 ):
-    """Return the forward distance to the cylindrical boundary."""
+    """Return the forward distance to a finite cylindrical boundary."""
     vertices = prepare_xyz(
         vertices,
         "vertices",
     )
-    directions = unit(directions)
+    directions = prepare_xyz(
+        directions,
+        "directions",
+    )
 
     if len(vertices) != len(directions):
-        raise ValueError(
-            "vertices and directions must have "
-            "the same number of events."
-        )
+        raise ValueError("vertices and directions must have the same number of events.")
+
+    directions = unit(directions)
 
     x, y, z = vertices.T
     dx, dy, dz = directions.T
@@ -142,41 +146,75 @@ def towall(
 
     discriminant = b**2 - 4.0 * a * c
 
-    valid_side = (
-        (a > 0)
-        & (discriminant >= 0)
-    )
+    valid_quadratic = (a > EPSILON) & (discriminant >= 0.0)
 
-    square_root = np.zeros_like(
-        discriminant
-    )
-    square_root[valid_side] = np.sqrt(
-        discriminant[valid_side]
-    )
+    square_root = np.zeros_like(discriminant)
+    square_root[valid_quadratic] = np.sqrt(discriminant[valid_quadratic])
 
-    candidates[valid_side, 0] = (
-        -b[valid_side]
-        + square_root[valid_side]
-    ) / (2.0 * a[valid_side])
+    side_distances = [
+        np.full(len(vertices), np.inf),
+        np.full(len(vertices), np.inf),
+    ]
 
-    candidates[valid_side, 1] = (
-        -b[valid_side]
-        - square_root[valid_side]
-    ) / (2.0 * a[valid_side])
+    side_distances[0][valid_quadratic] = (
+        -b[valid_quadratic] + square_root[valid_quadratic]
+    ) / (2.0 * a[valid_quadratic])
+
+    side_distances[1][valid_quadratic] = (
+        -b[valid_quadratic] - square_root[valid_quadratic]
+    ) / (2.0 * a[valid_quadratic])
+
+    for candidate_index, distance in enumerate(side_distances):
+        intersection_z = z + distance * dz
+
+        valid_side = (
+            np.isfinite(distance)
+            & (distance > EPSILON)
+            & (np.abs(intersection_z) <= half_height)
+        )
+
+        candidates[valid_side, candidate_index] = distance[valid_side]
 
     # Intersections with the top and bottom caps.
-    valid_z = np.abs(dz) > 0
+    valid_z = np.abs(dz) > EPSILON
 
-    candidates[valid_z, 2] = (
-        half_height - z[valid_z]
-    ) / dz[valid_z]
+    top_distance = np.full(
+        len(vertices),
+        np.inf,
+    )
+    bottom_distance = np.full(
+        len(vertices),
+        np.inf,
+    )
 
-    candidates[valid_z, 3] = (
-        -half_height - z[valid_z]
-    ) / dz[valid_z]
+    top_distance[valid_z] = (half_height - z[valid_z]) / dz[valid_z]
 
-    # Only forward intersections are valid.
-    candidates[candidates <= 0] = np.inf
+    bottom_distance[valid_z] = (-half_height - z[valid_z]) / dz[valid_z]
+
+    cap_distances = [
+        top_distance,
+        bottom_distance,
+    ]
+
+    for offset, distance in enumerate(
+        cap_distances,
+        start=2,
+    ):
+        intersection_x = x + distance * dx
+        intersection_y = y + distance * dy
+
+        intersection_radius = np.hypot(
+            intersection_x,
+            intersection_y,
+        )
+
+        valid_cap = (
+            np.isfinite(distance)
+            & (distance > EPSILON)
+            & (intersection_radius <= radius)
+        )
+
+        candidates[valid_cap, offset] = distance[valid_cap]
 
     distances = np.min(
         candidates,
@@ -184,12 +222,7 @@ def towall(
     )
 
     if np.any(~np.isfinite(distances)):
-        n_invalid = int(
-            np.sum(~np.isfinite(distances))
-        )
-        raise ValueError(
-            "Could not calculate ToWall for "
-            f"{n_invalid} events."
-        )
+        n_invalid = int(np.sum(~np.isfinite(distances)))
+        raise ValueError(f"Could not calculate ToWall for {n_invalid} events.")
 
     return distances

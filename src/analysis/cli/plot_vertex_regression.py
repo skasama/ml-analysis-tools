@@ -57,19 +57,13 @@ def calculate_profile(
         dtype=float,
     )
 
-    finite = (
-        np.isfinite(x_values)
-        & np.isfinite(residuals)
-    )
+    finite = np.isfinite(x_values) & np.isfinite(residuals)
 
     x_values = x_values[finite]
     residuals = residuals[finite]
 
     if x_values.size == 0:
-        raise ValueError(
-            "No finite values are available "
-            "for profile calculation."
-        )
+        raise ValueError("No finite values are available for profile calculation.")
 
     x_min = float(np.min(x_values))
     x_max = float(np.max(x_values))
@@ -82,9 +76,7 @@ def calculate_profile(
         x_max,
         n_bins + 1,
     )
-    centres = 0.5 * (
-        edges[:-1] + edges[1:]
-    )
+    centres = 0.5 * (edges[:-1] + edges[1:])
 
     biases = np.full(
         n_bins,
@@ -101,24 +93,16 @@ def calculate_profile(
 
     for index in range(n_bins):
         if index == n_bins - 1:
-            in_bin = (
-                (x_values >= edges[index])
-                & (x_values <= edges[index + 1])
-            )
+            in_bin = (x_values >= edges[index]) & (x_values <= edges[index + 1])
         else:
-            in_bin = (
-                (x_values >= edges[index])
-                & (x_values < edges[index + 1])
-            )
+            in_bin = (x_values >= edges[index]) & (x_values < edges[index + 1])
 
         values = residuals[in_bin]
         counts[index] = len(values)
 
         if values.size > 0:
             biases[index] = np.mean(values)
-            resolutions[index] = calculate_resolution(
-                values
-            )
+            resolutions[index] = calculate_resolution(values)
 
     return (
         centres,
@@ -138,12 +122,8 @@ def calculate_vertex_quantities(
     """Calculate residuals and geometry-dependent quantities."""
     residuals = predictions - targets
 
-    radius_predicted = cylindrical_radius(
-        predictions
-    )
-    radius_true = cylindrical_radius(
-        targets
-    )
+    radius_predicted = cylindrical_radius(predictions)
+    radius_true = cylindrical_radius(targets)
 
     wall_predicted = wall(
         predictions,
@@ -164,14 +144,10 @@ def calculate_vertex_quantities(
         ),
         "radius_predicted": radius_predicted,
         "radius_true": radius_true,
-        "radius_residual": (
-            radius_predicted - radius_true
-        ),
+        "radius_residual": (radius_predicted - radius_true),
         "wall_predicted": wall_predicted,
         "wall_true": wall_true,
-        "wall_residual": (
-            wall_predicted - wall_true
-        ),
+        "wall_residual": (wall_predicted - wall_true),
     }
 
 
@@ -192,26 +168,18 @@ def print_statistics(
 
     residuals = quantities["residuals"]
     error_3d = quantities["error_3d"]
-    radius_residual = quantities[
-        "radius_residual"
-    ]
-    wall_residual = quantities[
-        "wall_residual"
-    ]
+    radius_residual = quantities["radius_residual"]
+    wall_residual = quantities["wall_residual"]
 
     print()
-    print(
-        "========== Vertex regression statistics =========="
-    )
+    print("========== Vertex regression statistics ==========")
     print(f"Number of events: {len(targets):,}")
     print(f"Unit: {UNIT}")
 
     print()
     print("Cartesian residuals:")
 
-    for index, label in enumerate(
-        ("x", "y", "z")
-    ):
+    for index, label in enumerate(("x", "y", "z")):
         values = residuals[:, index]
 
         print(
@@ -241,27 +209,11 @@ def print_statistics(
 
     print()
     print("3D position error:")
-    print(
-        f"  Mean: {np.mean(error_3d):.6g} "
-        f"{UNIT}"
-    )
-    print(
-        f"  Median: {np.median(error_3d):.6g} "
-        f"{UNIT}"
-    )
-    print(
-        "  68% quantile: "
-        f"{np.quantile(error_3d, 0.68):.6g} "
-        f"{UNIT}"
-    )
-    print(
-        "  RMS: "
-        f"{np.sqrt(np.mean(error_3d**2)):.6g} "
-        f"{UNIT}"
-    )
-    print(
-        "=================================================="
-    )
+    print(f"  Mean: {np.mean(error_3d):.6g} {UNIT}")
+    print(f"  Median: {np.median(error_3d):.6g} {UNIT}")
+    print(f"  68% quantile: {np.quantile(error_3d, 0.68):.6g} {UNIT}")
+    print(f"  RMS: {np.sqrt(np.mean(error_3d**2)):.6g} {UNIT}")
+    print("==================================================")
     print()
 
 
@@ -353,10 +305,7 @@ def plot_prediction_vs_truth(
         fig,
         output_path(
             output_dir,
-            Path(
-                "vertex_prediction_vs_truth_"
-                "cylindrical_cm.png"
-            ),
+            Path("vertex_prediction_vs_truth_cylindrical_cm.png"),
         ),
         dpi,
     )
@@ -404,9 +353,7 @@ def plot_residuals(
         strict=True,
     ):
         bias = np.mean(residual)
-        resolution = calculate_resolution(
-            residual
-        )
+        resolution = calculate_resolution(residual)
 
         ax.hist(
             residual,
@@ -437,17 +384,11 @@ def plot_residuals(
             color="purple",
             linestyle=":",
             linewidth=1.5,
-            label=(
-                "68% resolution = "
-                f"{resolution:.2f}"
-            ),
+            label=(f"68% resolution = {resolution:.2f}"),
         )
 
         ax.set(
-            xlabel=(
-                f"Predicted {label} - "
-                f"true {label} [{UNIT}]"
-            ),
+            xlabel=(f"Predicted {label} - true {label} [{UNIT}]"),
             ylabel="Events",
             title=f"{label} residual",
         )
@@ -499,9 +440,7 @@ def plot_residuals(
         fig,
         output_path(
             output_dir,
-            Path(
-                "vertex_residuals_cylindrical_cm.png"
-            ),
+            Path("vertex_residuals_cylindrical_cm.png"),
         ),
         dpi,
     )
@@ -529,13 +468,8 @@ def plot_cylindrical_profiles(
     z_true = targets[:, 2]
     wall_true = quantities["wall_true"]
 
-    radius_residual = quantities[
-        "radius_residual"
-    ]
-    z_residual = (
-        predictions[:, 2]
-        - targets[:, 2]
-    )
+    radius_residual = quantities["radius_residual"]
+    z_residual = predictions[:, 2] - targets[:, 2]
     error_3d = quantities["error_3d"]
 
     configurations = [
@@ -565,9 +499,7 @@ def plot_cylindrical_profiles(
         figsize=(18, 9),
     )
 
-    for column, configuration in enumerate(
-        configurations
-    ):
+    for column, configuration in enumerate(configurations):
         (
             x_values,
             residual,
@@ -743,24 +675,16 @@ def main():
     args = build_parser().parse_args()
 
     if args.histogram_bins <= 0:
-        raise ValueError(
-            "--histogram-bins must be positive."
-        )
+        raise ValueError("--histogram-bins must be positive.")
 
     if args.profile_bins <= 0:
-        raise ValueError(
-            "--profile-bins must be positive."
-        )
+        raise ValueError("--profile-bins must be positive.")
 
     if args.tank_radius <= 0:
-        raise ValueError(
-            "--tank-radius must be positive."
-        )
+        raise ValueError("--tank-radius must be positive.")
 
     if args.tank_half_height <= 0:
-        raise ValueError(
-            "--tank-half-height must be positive."
-        )
+        raise ValueError("--tank-half-height must be positive.")
 
     minimum = np.asarray(
         args.minimum,
@@ -784,12 +708,8 @@ def main():
         args.indices,
     )
 
-    predictions_raw = xyz(
-        outputs.predictions
-    )
-    targets_raw = xyz(
-        outputs.targets
-    )
+    predictions_raw = xyz(outputs.predictions)
+    targets_raw = xyz(outputs.targets)
 
     if predictions_raw.shape != targets_raw.shape:
         raise ValueError(
@@ -798,34 +718,24 @@ def main():
             f"{targets_raw.shape}."
         )
 
-    valid = (
-        np.all(
-            np.isfinite(predictions_raw),
-            axis=1,
-        )
-        & np.all(
-            np.isfinite(targets_raw),
-            axis=1,
-        )
+    valid = np.all(
+        np.isfinite(predictions_raw),
+        axis=1,
+    ) & np.all(
+        np.isfinite(targets_raw),
+        axis=1,
     )
 
     if np.any(~valid):
-        n_removed = int(
-            np.sum(~valid)
-        )
+        n_removed = int(np.sum(~valid))
 
-        print(
-            f"Warning: removing {n_removed} events "
-            "with non-finite values."
-        )
+        print(f"Warning: removing {n_removed} events with non-finite values.")
 
         predictions_raw = predictions_raw[valid]
         targets_raw = targets_raw[valid]
 
     if len(targets_raw) == 0:
-        raise ValueError(
-            "No valid events remain."
-        )
+        raise ValueError("No valid events remain.")
 
     if args.already_cm:
         predictions = predictions_raw
