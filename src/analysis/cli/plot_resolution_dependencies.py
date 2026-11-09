@@ -60,7 +60,7 @@ def main():
         ("True energy [MeV]", et),
     ]
     errs = [
-        ("Vertex [cm]", np.linalg.norm(vp - vt, 1)),
+        ("Vertex [cm]", np.linalg.norm(vp - vt, axis=1)),
         ("Direction [deg]", opening_angle(dt, dp)),
         ("Energy [MeV]", ep - et),
         ("Relative energy [%]", 100 * (ep - et) / et),
