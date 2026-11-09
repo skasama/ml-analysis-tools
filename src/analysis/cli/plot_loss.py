@@ -66,6 +66,22 @@ def plot_validation_loss(
     )
 
 
+def spread_points_within_epochs(epoch):
+    """Spread repeated records across each epoch interval."""
+    epoch = np.asarray(epoch, dtype=float)
+    plot_epoch = epoch.copy()
+
+    for epoch_value in np.unique(epoch):
+        indices = np.flatnonzero(epoch == epoch_value)
+        n_points = len(indices)
+
+        if n_points > 1:
+            offsets = np.arange(n_points) / n_points
+            plot_epoch[indices] = epoch_value + offsets
+
+    return plot_epoch
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--run-dir", type=Path, required=True)
@@ -135,6 +151,7 @@ def main():
     print(f"Best validation loss = {val_loss[best]:.6g}")
     print(f"Best epoch = {val_epoch[best]:.3f}")
 
+    train_plot_epoch = spread_points_within_epochs(train_epoch)
     dense_training = len(train_epoch) >= 2 * len(val_epoch)
 
     if dense_training:
@@ -176,7 +193,7 @@ def main():
 
     plot_training_loss(
         ax_full,
-        train_epoch,
+        train_plot_epoch,
         train_loss_log,
         dense=dense_training,
         alpha=0.35,
@@ -207,7 +224,7 @@ def main():
 
     plot_training_loss(
         ax_zoom,
-        train_epoch,
+        train_plot_epoch,
         train_loss,
         dense=dense_training,
         alpha=0.45,
