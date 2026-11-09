@@ -110,3 +110,19 @@ python scripts/save_event_display_3d.py \
   --channel charge \
   --output plots/event0.png
 ```
+
+## Development
+
+Install the locked dependencies, including development tools, with:
+
+```bash
+uv sync --locked
+```
+
+Run the same checks used by CI:
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+```
