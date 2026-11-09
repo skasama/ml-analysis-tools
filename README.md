@@ -4,6 +4,26 @@ This repository provides analysis tools that use explicitly specified input file
 
 Relative input paths are resolved from the directory specified by `--run-dir`.
 
+## Command-line interface
+
+After installing the package, use the unified `analysis` command. The
+task-specific options remain unchanged:
+
+```bash
+analysis energy \
+  --run-dir /path/to/run \
+  --output-dir plots/energy
+```
+
+Available commands are `classification`, `classification-dependencies`,
+`direction`, `energy`, `loss`, `resolution-dependencies`, `vertex`, and
+`event-display`. Direct entry points such as `analysis-plot-energy` are also
+provided for scripts and batch jobs.
+
+The existing files under `scripts/` remain compatible as transitional wrappers.
+New plotting commands should be added as modules under `src/analysis/cli` and
+registered in `COMMANDS` and `[project.scripts]`.
+
 ## Running in Apptainer
 
 Add the local `src` directory to `PYTHONPATH`:

@@ -15,6 +15,17 @@ dependencies = [
     "scipy==1.17.1",
 ]
 
+[project.scripts]
+analysis = "analysis.cli.__main__:main"
+analysis-plot-classification = "analysis.cli.plot_classification:main"
+analysis-plot-classification-dependencies = "analysis.cli.plot_classification_dependencies:main"
+analysis-plot-direction = "analysis.cli.plot_direction_regression:main"
+analysis-plot-energy = "analysis.cli.plot_energy_regression:main"
+analysis-plot-loss = "analysis.cli.plot_loss:main"
+analysis-plot-resolution-dependencies = "analysis.cli.plot_resolution_dependencies:main"
+analysis-plot-vertex = "analysis.cli.plot_vertex_regression:main"
+analysis-event-display = "analysis.cli.save_event_display_3d:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
