@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wm-analysis-tools"
+version = "0.2.0"
+requires-python = ">=3.10"
+dependencies = ["numpy", "matplotlib", "PyYAML", "h5py", "scikit-learn"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

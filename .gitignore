@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Editable installation
+*.pth
+
+# Analysis outputs
+plots/
+results/
+outputs/
+*.png
+*.pdf
+
+# Large data and model files
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.hy
+*.root
+*.pth
+*.pt
+*.ckpt
+
+# Logs
+*.log
+log_train_*.csv
+log_val*.csv
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# System
+.DS_Store

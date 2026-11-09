@@ -1,0 +1,20 @@
+inputs:
+  predictions: outputs/preds.npy
+  targets: outputs/targets.npy
+  indices: outputs/indices.npy
+  train_log: outputs/log_train_0.csv
+  val_log: outputs/log_val.csv
+
+output_dir: plots
+
+detector:
+  radius_cm: 1690.0
+  half_height_cm: 1810.0
+
+vertex_normalization:
+  minimum: [-1690.0, -1690.0, -1810.0]
+  maximum: [1690.0, 1690.0, 1810.0]
+
+energy_normalization:
+  minimum: 0.5
+  maximum: 2000.0
