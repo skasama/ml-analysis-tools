@@ -23,15 +23,16 @@ def plot_training_loss(
     loss,
     *,
     use_thin_line,
-    label="Training loss",
+    alpha,
+    label="Train loss",
 ):
     if use_thin_line:
         ax.plot(
             epoch,
             loss,
             color="tab:blue",
-            linewidth=0.8,
-            alpha=0.4,
+            alpha=alpha,
+            linewidth=1.5,
             label=label,
         )
     else:
@@ -174,12 +175,14 @@ def main():
         train_epoch,
         train_loss_log,
         use_thin_line=use_thin_train_line,
+        alpha=0.35,
     )
 
     plot_validation_loss(
         ax_full,
         val_epoch,
         val_loss_log,
+        markersize=4,
     )
 
     ax_full.scatter(
@@ -201,14 +204,16 @@ def main():
     plot_training_loss(
         ax_zoom,
         train_epoch,
-        train_loss,
+        train_loss_log,
         use_thin_line=use_thin_train_line,
+        alpha=0.45,
     )
 
     plot_validation_loss(
         ax_zoom,
         val_epoch,
-        val_loss,
+        val_loss_log,
+        markersize=5,
     )
 
     ax_zoom.scatter(
