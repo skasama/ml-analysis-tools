@@ -52,15 +52,16 @@ def plot_validation_loss(
     epoch,
     loss,
     *,
+    markersize,
     label="Validation loss",
 ):
     ax.plot(
         epoch,
         loss,
         color="tab:orange",
-        linewidth=1.5,
+        linewidth=2.5,
         marker="o",
-        markersize=4,
+        markersize=markersize,
         label=label,
     )
 
@@ -204,7 +205,7 @@ def main():
     plot_training_loss(
         ax_zoom,
         train_epoch,
-        train_loss_log,
+        train_loss,
         use_thin_line=use_thin_train_line,
         alpha=0.45,
     )
@@ -212,7 +213,7 @@ def main():
     plot_validation_loss(
         ax_zoom,
         val_epoch,
-        val_loss_log,
+        val_loss,
         markersize=5,
     )
 
@@ -252,6 +253,9 @@ def main():
     )
     fig.tight_layout()
 
+    if a.show:
+        plt.show()
+
     save(
         fig,
         output_path(
@@ -260,9 +264,6 @@ def main():
         ),
         a.dpi,
     )
-
-    if a.show:
-        plt.show()
 
 
 if __name__ == "__main__":
