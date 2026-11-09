@@ -22,31 +22,29 @@ def plot_training_loss(
     epoch,
     loss,
     *,
-    use_dense_style,
+    dense,
     alpha,
     label="Train loss",
 ):
-    if use_dense_style:
-        # Many training points: plot all points as a semi-transparent line.
-        ax.plot(
-            epoch,
-            loss,
-            color="tab:blue",
-            linewidth=1.5,
-            alpha=alpha,
-            label=label,
-        )
+    plot_kwargs = {
+        "color": "tab:blue",
+        "linewidth": 1.5,
+        "label": label,
+    }
+
+    if dense:
+        # Same style as the original plot.
+        plot_kwargs["alpha"] = alpha
     else:
-        # Few training points: connect points and show markers.
-        ax.plot(
-            epoch,
-            loss,
-            color="tab:blue",
-            linewidth=1.5,
-            marker="o",
-            markersize=4,
-            label=label,
-        )
+        # Connect sparse training points and show markers.
+        plot_kwargs["marker"] = "o"
+        plot_kwargs["markersize"] = 4
+
+    ax.plot(
+        epoch,
+        loss,
+        **plot_kwargs,
+    )
 
 
 def plot_validation_loss(
@@ -137,9 +135,9 @@ def main():
     print(f"Best validation loss = {val_loss[best]:.6g}")
     print(f"Best epoch = {val_epoch[best]:.3f}")
 
-    use_dense_train_style = len(train_epoch) >= 2 * len(val_epoch)
+    dense_training = len(train_epoch) >= 2 * len(val_epoch)
 
-    if use_dense_train_style:
+    if dense_training:
         print(
             "Training style: semi-transparent line "
             "(training points >= 2 x validation points)"
@@ -180,7 +178,7 @@ def main():
         ax_full,
         train_epoch,
         train_loss_log,
-        use_dense_style=use_dense_train_style,
+        dense=dense_training,
         alpha=0.35,
     )
 
@@ -211,7 +209,7 @@ def main():
         ax_zoom,
         train_epoch,
         train_loss,
-        use_dense_style=use_dense_train_style,
+        dense=dense_training,
         alpha=0.45,
     )
 
