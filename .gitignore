@@ -44,3 +44,8 @@ log_val*.csv
 
 # System
 .DS_Store
+
+# Windows download metadata
+*:Zone.Identifier
+Zone.Identifier
+*.Zone.Identifier
