@@ -48,6 +48,14 @@ figure = scatter_identity(
 save(figure, "plots/energy/prediction_vs_truth.png")
 ```
 
+The package also provides small building blocks for larger comparisons:
+`analysis.data` contains the common result schema, `analysis.comparison`
+aligns and evaluates methods, `analysis.uncertainty` provides bootstrap
+intervals, `analysis.config` loads validated YAML mappings, and
+`analysis.baselines` contains simple non-ML baselines. Plot-specific helpers
+are grouped under `analysis.plotting.comparison` and
+`analysis.plotting.diagnostics`.
+
 ## Running in Apptainer
 
 Add the local `src` directory to `PYTHONPATH`:

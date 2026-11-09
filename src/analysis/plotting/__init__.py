@@ -2,6 +2,9 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
+from .comparison import plot_metric_comparison
+from .diagnostics import plot_residual_histogram
+
 
 def scatter_identity(
     predictions,
@@ -40,3 +43,11 @@ def save(fig, path, dpi=200):
     fig.savefig(path, dpi=dpi, bbox_inches="tight")
     plt.close(fig)
     print(f"Saved: {path}")
+
+
+__all__ = [
+    "plot_metric_comparison",
+    "plot_residual_histogram",
+    "save",
+    "scatter_identity",
+]
