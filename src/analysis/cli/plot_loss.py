@@ -17,33 +17,51 @@ def column(data, names):
     raise KeyError(f"Columns {names} not found. Available: {list(avail)}")
 
 
-def plot_validation_loss(
+def plot_training_loss(
     ax,
     epoch,
     loss,
     *,
     use_thin_line,
-    label="Validation loss",
+    label="Training loss",
 ):
     if use_thin_line:
         ax.plot(
             epoch,
             loss,
-            color="tab:orange",
-            linewidth=0.5,
-            alpha=0.3,
+            color="tab:blue",
+            linewidth=0.8,
+            alpha=0.4,
             label=label,
         )
     else:
         ax.plot(
             epoch,
             loss,
-            color="tab:orange",
+            color="tab:blue",
             linewidth=1.5,
             marker="o",
             markersize=4,
             label=label,
         )
+
+
+def plot_validation_loss(
+    ax,
+    epoch,
+    loss,
+    *,
+    label="Validation loss",
+):
+    ax.plot(
+        epoch,
+        loss,
+        color="tab:orange",
+        linewidth=1.5,
+        marker="o",
+        markersize=4,
+        label=label,
+    )
 
 
 def main():
@@ -115,26 +133,14 @@ def main():
     print(f"Best validation loss = {val_loss[best]:.6g}")
     print(f"Best epoch = {val_epoch[best]:.3f}")
 
-    first_epoch = int(np.floor(np.nanmin(train_epoch)))
-    last_epoch = int(np.floor(np.nanmax(train_epoch)))
-    n_train_epochs = last_epoch - first_epoch + 1
+    use_thin_train_line = len(train_epoch) >= 2 * len(val_epoch)
 
-    n_val_points = len(val_epoch)
-    val_points_per_epoch = n_val_points / n_train_epochs
-
-    use_thin_val_line = val_points_per_epoch >= 2.0
-
-    print(f"Training log points: {len(train_epoch)}")
-    print(f"Training epochs: {n_train_epochs}")
-    print(f"Validation points: {n_val_points}")
-    print(f"Validation points per epoch: {val_points_per_epoch:.2f}")
-
-    if use_thin_val_line:
-        print("Validation style: thin line (validation points >= 2 x training epochs)")
+    if use_thin_train_line:
+        print("Training style: thin line (training points >= 2 x validation points)")
     else:
         print(
-            "Validation style: line with markers "
-            "(validation points < 2 x training epochs)"
+            "Training style: line with markers "
+            "(training points < 2 x validation points)"
         )
 
     positive_losses = np.concatenate(
@@ -163,20 +169,17 @@ def main():
     )
     ax_full, ax_zoom = axes
 
-    ax_full.plot(
+    plot_training_loss(
+        ax_full,
         train_epoch,
         train_loss_log,
-        color="tab:blue",
-        linewidth=1.5,
-        alpha=0.4,
-        label="Train loss",
+        use_thin_line=use_thin_train_line,
     )
 
     plot_validation_loss(
         ax_full,
         val_epoch,
         val_loss_log,
-        use_thin_line=use_thin_val_line,
     )
 
     ax_full.scatter(
@@ -195,20 +198,17 @@ def main():
         title="Full training history",
     )
 
-    ax_zoom.plot(
+    plot_training_loss(
+        ax_zoom,
         train_epoch,
         train_loss,
-        color="tab:blue",
-        linewidth=1.5,
-        alpha=0.5,
-        label="Train loss",
+        use_thin_line=use_thin_train_line,
     )
 
     plot_validation_loss(
         ax_zoom,
         val_epoch,
         val_loss,
-        use_thin_line=use_thin_val_line,
     )
 
     ax_zoom.scatter(
