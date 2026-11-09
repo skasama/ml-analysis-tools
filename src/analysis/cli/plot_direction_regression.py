@@ -6,6 +6,7 @@ import numpy as np
 
 from analysis.geometry import opening_angle, unit
 from analysis.io import load_outputs
+from analysis.metrics import resolution68
 from analysis.paths import output_path
 from analysis.plotting import save
 from analysis.regression import inverse_minmax, xyz
@@ -13,17 +14,6 @@ from analysis.regression import inverse_minmax, xyz
 COMPONENT_LABELS = ["dx", "dy", "dz"]
 ANGLE_UNIT = "deg"
 EPSILON = 1.0e-12
-
-
-def calculate_resolution(residuals):
-    """Return the 68th percentile of the absolute residual."""
-    residuals = np.asarray(residuals, dtype=float)
-    residuals = residuals[np.isfinite(residuals)]
-
-    if residuals.size == 0:
-        return np.nan
-
-    return float(np.quantile(np.abs(residuals), 0.68))
 
 
 def valid_direction_mask(vectors):
@@ -118,7 +108,7 @@ def print_statistics(predictions, targets):
         print(f"  {label}:")
         print(f"    Bias: {np.mean(values):.6g}")
         print(f"    Median residual: {np.median(values):.6g}")
-        print(f"    68% resolution: {calculate_resolution(values):.6g}")
+        print(f"    68% resolution: {resolution68(values):.6g}")
         print(f"    MAE: {np.mean(np.abs(values)):.6g}")
         print(f"    RMSE: {np.sqrt(np.mean(values**2)):.6g}")
 
@@ -246,7 +236,7 @@ def plot_residuals(
     for index, label in enumerate(COMPONENT_LABELS):
         component_residuals = residuals[:, index]
         bias = np.mean(component_residuals)
-        resolution = calculate_resolution(component_residuals)
+        resolution = resolution68(component_residuals)
 
         axes[index].hist(
             component_residuals,
@@ -479,7 +469,7 @@ def plot_angle_results(
         ) = configuration
 
         bias = np.mean(residual)
-        resolution = calculate_resolution(residual)
+        resolution = resolution68(residual)
 
         ax.hist(
             residual,

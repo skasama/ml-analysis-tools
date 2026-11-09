@@ -5,23 +5,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from analysis.io import load_outputs
+from analysis.metrics import resolution68
 from analysis.paths import output_path
-from analysis.plotting import save
+from analysis.plotting import save, scatter_identity
 from analysis.regression import inverse_minmax, scalar
 
 UNIT = "MeV"
 EPSILON = 1.0e-10
-
-
-def calculate_resolution(residuals):
-    """Return the 68th percentile of the absolute residual."""
-    residuals = np.asarray(residuals, dtype=float)
-    residuals = residuals[np.isfinite(residuals)]
-
-    if residuals.size == 0:
-        return np.nan
-
-    return float(np.quantile(np.abs(residuals), 0.68))
 
 
 def calculate_relative_residuals(predictions, targets):
@@ -48,7 +38,7 @@ def print_statistics(predictions, targets):
     )
 
     bias = np.mean(residuals)
-    resolution = calculate_resolution(residuals)
+    resolution = resolution68(residuals)
 
     print()
     print("========== Energy regression statistics ==========")
@@ -68,7 +58,7 @@ def print_statistics(predictions, targets):
 
     if relative_residuals.size > 0:
         relative_bias = np.mean(relative_residuals)
-        relative_resolution = calculate_resolution(relative_residuals)
+        relative_resolution = resolution68(relative_residuals)
 
         print(f"  Valid events: {np.sum(relative_valid):,} / {len(targets):,}")
         print(f"  Relative bias: {relative_bias:.6g} ({100.0 * relative_bias:.3f}%)")
@@ -99,45 +89,14 @@ def plot_prediction_vs_truth(
     dpi,
 ):
     """Plot predicted energy against true energy."""
-    fig, ax = plt.subplots(
-        figsize=(7, 6),
-    )
-
-    ax.scatter(
-        targets,
+    fig = scatter_identity(
         predictions,
-        s=5,
-        alpha=0.25,
-        rasterized=True,
-    )
-
-    value_min = min(
-        np.min(targets),
-        np.min(predictions),
-    )
-    value_max = max(
-        np.max(targets),
-        np.max(predictions),
-    )
-
-    ax.plot(
-        [value_min, value_max],
-        [value_min, value_max],
-        color="black",
-        linestyle="--",
-        linewidth=1.5,
-        label="Perfect prediction",
-    )
-
-    ax.set(
-        xlabel=f"True energy [{UNIT}]",
-        ylabel=f"Predicted energy [{UNIT}]",
+        targets,
+        xlabel="True energy",
+        ylabel="Predicted energy",
         title="Energy regression: prediction vs truth",
+        unit=UNIT,
     )
-    ax.grid(alpha=0.3)
-    ax.legend()
-
-    fig.tight_layout()
 
     save(
         fig,
@@ -172,7 +131,7 @@ def plot_residuals(
     )
 
     absolute_bias = np.mean(residuals)
-    absolute_resolution = calculate_resolution(residuals)
+    absolute_resolution = resolution68(residuals)
 
     axes[0].hist(
         residuals,
@@ -223,7 +182,7 @@ def plot_residuals(
     if relative_residuals.size > 0:
         relative_residuals_percent = 100.0 * relative_residuals
         relative_bias_percent = float(np.mean(relative_residuals_percent))
-        relative_resolution_percent = 100.0 * calculate_resolution(relative_residuals)
+        relative_resolution_percent = 100.0 * resolution68(relative_residuals)
 
         axes[1].hist(
             relative_residuals_percent,
@@ -359,7 +318,7 @@ def calculate_binned_profiles(
             continue
 
         biases[bin_index] = np.mean(bin_residuals)
-        resolutions[bin_index] = calculate_resolution(bin_residuals)
+        resolutions[bin_index] = resolution68(bin_residuals)
 
         relative_valid = np.abs(bin_targets) > EPSILON
 
@@ -369,7 +328,7 @@ def calculate_binned_profiles(
             )
 
             relative_biases[bin_index] = np.mean(relative_residuals)
-            relative_resolutions[bin_index] = calculate_resolution(relative_residuals)
+            relative_resolutions[bin_index] = resolution68(relative_residuals)
 
     return {
         "bin_edges": bin_edges,

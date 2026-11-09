@@ -1,7 +1,12 @@
 import numpy as np
 import pytest
 
-from analysis.metrics import classification_metrics, regression_metrics
+from analysis.metrics import (
+    classification_metrics,
+    regression_metrics,
+    residual_profile,
+    resolution68,
+)
 from analysis.results import MethodResult, align_by_event_id, align_results
 
 
@@ -51,3 +56,19 @@ def test_classification_metrics_accepts_one_hot_targets():
         [[1.0, 0.0], [1.0, 0.0]],
     )
     assert metrics["accuracy"] == pytest.approx(0.5)
+
+
+def test_resolution68_ignores_non_finite_values():
+    assert resolution68([1.0, -2.0, np.nan]) == pytest.approx(1.68)
+
+
+def test_residual_profile_returns_binned_statistics():
+    centres, biases, resolutions, counts = residual_profile(
+        [0.0, 0.5, 1.0, 1.5],
+        [1.0, 1.0, 3.0, 3.0],
+        n_bins=2,
+    )
+    np.testing.assert_allclose(centres, [0.375, 1.125])
+    np.testing.assert_allclose(biases, [1.0, 3.0])
+    np.testing.assert_allclose(resolutions, [1.0, 3.0])
+    np.testing.assert_array_equal(counts, [2, 2])

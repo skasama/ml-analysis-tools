@@ -3,6 +3,37 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 
+def scatter_identity(
+    predictions,
+    targets,
+    *,
+    xlabel,
+    ylabel,
+    title,
+    unit="",
+    point_size=5,
+    alpha=0.25,
+):
+    """Create a prediction-versus-truth scatter plot with an identity line."""
+    fig, ax = plt.subplots(figsize=(7, 6))
+    ax.scatter(targets, predictions, s=point_size, alpha=alpha, rasterized=True)
+    value_min = min(float(min(targets)), float(min(predictions)))
+    value_max = max(float(max(targets)), float(max(predictions)))
+    ax.plot(
+        [value_min, value_max],
+        [value_min, value_max],
+        color="black",
+        linestyle="--",
+        linewidth=1.5,
+        label="Perfect prediction",
+    )
+    ax.set(xlabel=f"{xlabel} [{unit}]", ylabel=f"{ylabel} [{unit}]", title=title)
+    ax.grid(alpha=0.3)
+    ax.legend()
+    fig.tight_layout()
+    return fig
+
+
 def save(fig, path, dpi=200):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)

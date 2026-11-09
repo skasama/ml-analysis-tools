@@ -2,6 +2,42 @@ import numpy as np
 from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_error
 
 
+def resolution68(values):
+    """Return the 68th percentile of absolute finite values."""
+    values = np.asarray(values, dtype=float)
+    values = np.abs(values[np.isfinite(values)])
+    return float(np.quantile(values, 0.68)) if values.size else np.nan
+
+
+def residual_profile(x_values, residuals, *, n_bins):
+    """Calculate binned bias, 68% resolution, and event counts."""
+    x_values = np.asarray(x_values, dtype=float)
+    residuals = np.asarray(residuals, dtype=float)
+    finite = np.isfinite(x_values) & np.isfinite(residuals)
+    x_values, residuals = x_values[finite], residuals[finite]
+    if x_values.size == 0:
+        raise ValueError("No finite values are available for profile calculation.")
+
+    edges = np.linspace(np.min(x_values), np.max(x_values), n_bins + 1)
+    if edges[-1] <= edges[0]:
+        edges[-1] = edges[0] + np.finfo(float).eps
+    centres = 0.5 * (edges[:-1] + edges[1:])
+    biases = np.full(n_bins, np.nan)
+    resolutions = np.full(n_bins, np.nan)
+    counts = np.zeros(n_bins, dtype=int)
+
+    for index, (low, high) in enumerate(zip(edges[:-1], edges[1:], strict=True)):
+        in_bin = (x_values >= low) & (
+            (x_values <= high) if index == n_bins - 1 else (x_values < high)
+        )
+        values = residuals[in_bin]
+        counts[index] = len(values)
+        if values.size:
+            biases[index] = np.mean(values)
+            resolutions[index] = resolution68(values)
+    return centres, biases, resolutions, counts
+
+
 def regression_metrics(predictions, targets):
     """Calculate method-independent scalar regression metrics."""
     predictions = np.asarray(predictions, dtype=float)

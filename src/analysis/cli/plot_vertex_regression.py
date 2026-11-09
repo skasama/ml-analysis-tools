@@ -6,6 +6,7 @@ import numpy as np
 
 from analysis.geometry import cylindrical_radius, wall
 from analysis.io import load_outputs
+from analysis.metrics import residual_profile, resolution68
 from analysis.paths import output_path
 from analysis.plotting import save
 from analysis.regression import inverse_minmax, xyz
@@ -20,96 +21,6 @@ COORDINATE_LABELS = [
     "R",
     "Wall",
 ]
-
-
-def calculate_resolution(residuals):
-    """Return the 68th percentile of the absolute residual."""
-    residuals = np.asarray(
-        residuals,
-        dtype=float,
-    )
-    residuals = residuals[np.isfinite(residuals)]
-
-    if residuals.size == 0:
-        return np.nan
-
-    return float(
-        np.quantile(
-            np.abs(residuals),
-            0.68,
-        )
-    )
-
-
-def calculate_profile(
-    x_values,
-    residuals,
-    *,
-    n_bins,
-):
-    """Calculate bias, resolution, and count in bins of x."""
-    x_values = np.asarray(
-        x_values,
-        dtype=float,
-    )
-    residuals = np.asarray(
-        residuals,
-        dtype=float,
-    )
-
-    finite = np.isfinite(x_values) & np.isfinite(residuals)
-
-    x_values = x_values[finite]
-    residuals = residuals[finite]
-
-    if x_values.size == 0:
-        raise ValueError("No finite values are available for profile calculation.")
-
-    x_min = float(np.min(x_values))
-    x_max = float(np.max(x_values))
-
-    if x_max <= x_min:
-        x_max = x_min + EPSILON
-
-    edges = np.linspace(
-        x_min,
-        x_max,
-        n_bins + 1,
-    )
-    centres = 0.5 * (edges[:-1] + edges[1:])
-
-    biases = np.full(
-        n_bins,
-        np.nan,
-    )
-    resolutions = np.full(
-        n_bins,
-        np.nan,
-    )
-    counts = np.zeros(
-        n_bins,
-        dtype=int,
-    )
-
-    for index in range(n_bins):
-        if index == n_bins - 1:
-            in_bin = (x_values >= edges[index]) & (x_values <= edges[index + 1])
-        else:
-            in_bin = (x_values >= edges[index]) & (x_values < edges[index + 1])
-
-        values = residuals[in_bin]
-        counts[index] = len(values)
-
-        if values.size > 0:
-            biases[index] = np.mean(values)
-            resolutions[index] = calculate_resolution(values)
-
-    return (
-        centres,
-        biases,
-        resolutions,
-        counts,
-    )
 
 
 def calculate_vertex_quantities(
@@ -186,7 +97,7 @@ def print_statistics(
             f"  {label}: "
             f"bias={np.mean(values):.6g}, "
             f"resolution="
-            f"{calculate_resolution(values):.6g} "
+            f"{resolution68(values):.6g} "
             f"{UNIT}"
         )
 
@@ -196,14 +107,14 @@ def print_statistics(
         "  R:    "
         f"bias={np.mean(radius_residual):.6g}, "
         f"resolution="
-        f"{calculate_resolution(radius_residual):.6g} "
+        f"{resolution68(radius_residual):.6g} "
         f"{UNIT}"
     )
     print(
         "  Wall: "
         f"bias={np.mean(wall_residual):.6g}, "
         f"resolution="
-        f"{calculate_resolution(wall_residual):.6g} "
+        f"{resolution68(wall_residual):.6g} "
         f"{UNIT}"
     )
 
@@ -353,7 +264,7 @@ def plot_residuals(
         strict=True,
     ):
         bias = np.mean(residual)
-        resolution = calculate_resolution(residual)
+        resolution = resolution68(residual)
 
         ax.hist(
             residual,
@@ -512,7 +423,7 @@ def plot_cylindrical_profiles(
             biases,
             resolutions,
             counts,
-        ) = calculate_profile(
+        ) = residual_profile(
             x_values,
             residual,
             n_bins=profile_bins,

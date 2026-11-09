@@ -24,6 +24,30 @@ The existing files under `scripts/` remain compatible as transitional wrappers.
 New plotting commands should be added as modules under `src/analysis/cli` and
 registered in `COMMANDS` and `[project.scripts]`.
 
+Common calculations belong in `analysis.metrics`, and reusable figure
+construction belongs in `analysis.plotting`. For example:
+
+```python
+from analysis.metrics import residual_profile, resolution68
+from analysis.plotting import save, scatter_identity
+
+resolution = resolution68(predictions - targets)
+centres, biases, resolutions, counts = residual_profile(
+    targets,
+    predictions - targets,
+    n_bins=20,
+)
+figure = scatter_identity(
+    predictions,
+    targets,
+    xlabel="True energy",
+    ylabel="Predicted energy",
+    title="Energy regression",
+    unit="MeV",
+)
+save(figure, "plots/energy/prediction_vs_truth.png")
+```
+
 ## Running in Apptainer
 
 Add the local `src` directory to `PYTHONPATH`:
