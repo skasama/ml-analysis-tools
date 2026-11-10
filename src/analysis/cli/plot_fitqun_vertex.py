@@ -75,7 +75,13 @@ def compute_nhits(event_hits_index, total_hits, n_events):
     return nhits
 
 
-def load_selected_vertices(input_file, min_hits):
+def load_selected_vertices(
+    input_file,
+    min_hits,
+    *,
+    tank_radius,
+    tank_half_height,
+):
     """Load and select electron truth and fiTQun electron-hypothesis vertices."""
     with h5py.File(input_file, "r") as h5file:
         required = (
@@ -117,23 +123,42 @@ def load_selected_vertices(input_file, min_hits):
 
     electron = labels == ELECTRON_LABEL
     hit_selection = nhits > min_hits
+
     finite = np.all(np.isfinite(truth), axis=1) & np.all(
-        np.isfinite(prediction), axis=1
+        np.isfinite(prediction),
+        axis=1,
     )
-    selected = electron & hit_selection & finite
+
+    prediction_radius = cylindrical_radius(prediction)
+
+    prediction_inside = (prediction_radius <= tank_radius) & (
+        np.abs(prediction[:, 2]) <= tank_half_height
+    )
+
+    selected_before_volume_cut = electron & hit_selection & finite
+    selected = selected_before_volume_cut & prediction_inside
 
     print()
     print("========== fiTQun vertex selection ==========")
-    print(f"Input events:                    {n_events:,}")
-    print(f"Electron events (labels == 1):   {np.count_nonzero(electron):,}")
+    print(f"Input events:                         {n_events:,}")
+    print(f"Electron events (labels == 1):        {np.count_nonzero(electron):,}")
     print(
-        f"Events with nhits > {min_hits}:          {np.count_nonzero(hit_selection):,}"
+        f"Events with nhits > {min_hits}:               "
+        f"{np.count_nonzero(hit_selection):,}"
     )
     print(
-        "Electron events passing hit cut: "
+        "Electron events passing hit cut:      "
         f"{np.count_nonzero(electron & hit_selection):,}"
     )
-    print(f"Selected events:                 {np.count_nonzero(selected):,}")
+    print(
+        "Finite electron events after hit cut: "
+        f"{np.count_nonzero(selected_before_volume_cut):,}"
+    )
+    print(
+        "fiTQun vertices outside tank:         "
+        f"{np.count_nonzero(selected_before_volume_cut & ~prediction_inside):,}"
+    )
+    print(f"Selected events:                      {np.count_nonzero(selected):,}")
     print("=============================================")
     print()
 
@@ -575,6 +600,8 @@ def main():
     predictions, targets, _ = load_selected_vertices(
         args.input_file,
         args.min_hits,
+        tank_radius=args.tank_radius,
+        tank_half_height=args.tank_half_height,
     )
 
     print_statistics(
