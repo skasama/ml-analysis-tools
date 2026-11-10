@@ -756,8 +756,8 @@ def build_parser():
     parser.add_argument(
         "--min-true-wall",
         type=float,
-        default=200.0,
-        help=("Require true Wall > this value in cm (default: 200)"),
+        default=-1e-10,
+        help=("Require true Wall > this value in cm (default: -1e-10)"),
     )
     parser.add_argument(
         "--min-evis",
