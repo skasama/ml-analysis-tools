@@ -192,9 +192,8 @@ def load_selected_vertices(
         np.isfinite(prediction),
         axis=1,
     )
-    finite_evis = np.isfinite(evis)
 
-    finite = finite_truth & finite_prediction & finite_evis
+    finite = finite_truth & finite_prediction
 
     truth_inside = (truth_radius <= tank_radius) & (
         np.abs(truth[:, 2]) <= tank_half_height
@@ -206,7 +205,10 @@ def load_selected_vertices(
         np.abs(prediction[:, 2]) <= tank_half_height
     )
 
-    evis_selection = evis > min_evis
+    if min_evis is None:
+        evis_selection = np.ones(n_events, dtype=bool)
+    else:
+        evis_selection = np.isfinite(evis) & (evis > min_evis)
 
     after_electron = electron
     after_hit_cut = after_electron & hit_selection
@@ -238,7 +240,10 @@ def load_selected_vertices(
     print(f"After finite-value selection:       {n_after_finite:,}")
     print(f"After true Wall > {min_true_wall:g} cm:{n_after_true_wall:>13,}")
     print(f"After fiTQun vertex inside tank:    {n_after_prediction_inside:,}")
-    print(f"After fiTQun evis > {min_evis:g}:{n_selected:>17,}")
+    if min_evis is None:
+        print("fiTQun evis cut:                    disabled")
+    else:
+        print(f"After fiTQun evis > {min_evis:g}:{n_selected:>17,}")
     print()
     print("Removed at each selection step:")
     print(f"  Non-finite values:                {n_nonfinite_removed:,}")
@@ -756,13 +761,13 @@ def build_parser():
     parser.add_argument(
         "--min-true-wall",
         type=float,
-        default=-1e-10,
-        help=("Require true Wall > this value in cm (default: -1e-10)"),
+        default=200.0,
+        help=("Require true Wall > this value in cm (default: 200)"),
     )
     parser.add_argument(
         "--min-evis",
         type=float,
-        default=30.0,
+        default=None,
         help=("Require fiTQun evis > this value (default: 30)"),
     )
     parser.add_argument(
@@ -827,7 +832,7 @@ def validate_arguments(args):
             "both the tank radius and tank half-height."
         )
 
-    if not np.isfinite(args.min_evis):
+    if args.min_evis is not None and not np.isfinite(args.min_evis):
         raise ValueError("--min-evis must be finite.")
 
     if not args.evis_dataset.strip():
