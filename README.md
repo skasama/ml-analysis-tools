@@ -85,6 +85,34 @@ not require event IDs to match; each prediction/truth pair is evaluated in its
 own stored order. Existing dependency commands remain available for
 true-Wall/ToWall/energy dependent plots.
 
+To compare complete vertex/direction/energy dependency analyses, use the
+dedicated command below. Wall and ToWall are calculated from the vertex and
+direction truth arrays; no `wall.npy` or `towall.npy` file is required:
+
+```bash
+analysis compare-resolution-dependencies \
+  --label ml \
+  --vertex-run /path/to/ml_vertex_run \
+  --direction-run /path/to/ml_direction_run \
+  --energy-run /path/to/ml_energy_run \
+  --label fitqun \
+  --vertex-run /path/to/fitqun_vertex_run \
+  --direction-run /path/to/fitqun_direction_run \
+  --energy-run /path/to/fitqun_energy_run \
+  --output-dir plots/resolution_dependencies_comparison
+```
+
+The command overlays vertex, angular, absolute-energy, and relative-energy
+resolution versus true Wall, true ToWall, and true energy. Each label's
+vertex/direction/energy runs must have aligned `indices.npy` files within that
+label. Different labels may use different event samples.
+
+The same command is available as:
+
+```bash
+python scripts/compare_resolution_dependencies.py ...
+```
+
 To overlay dependency profiles from multiple methods, use the dedicated
 command. Regression produces bias and 68% resolution panels:
 

@@ -21,8 +21,10 @@ def xyz(x, name="values"):
 
 def inverse_minmax(x, lo, hi, *, source_min=0.0, source_max=1.0):
     """Map values from an arbitrary normalized interval into ``[lo, hi]``."""
-    if np.any(np.asarray(source_max) <= np.asarray(source_min)):
+    source_minimum = np.asarray(source_min, dtype=float)
+    source_maximum = np.asarray(source_max, dtype=float)
+    if np.any(source_maximum <= source_minimum):
         raise ValueError("source_max must be greater than source_min")
     values = np.asarray(x, dtype=float)
-    fraction = (values - source_min) / (source_max - source_min)
+    fraction = (values - source_minimum) / (source_maximum - source_minimum)
     return np.asarray(lo) + fraction * (np.asarray(hi) - np.asarray(lo))

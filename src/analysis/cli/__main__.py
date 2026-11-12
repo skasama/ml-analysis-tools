@@ -13,6 +13,7 @@ COMMANDS = {
     "inputs": "analysis.cli.inputs",
     "compare": "analysis.cli.compare",
     "compare-dependencies": "analysis.cli.compare_dependencies",
+    "compare-resolution-dependencies": "analysis.cli.compare_resolution_dependencies",
 }
 
 
