@@ -83,6 +83,7 @@ def _per_group(values, count, name, default):
 
 def _load_group(args, index):
     outputs = {}
+    selected_indices = {}
     for task in ("vertex", "direction", "energy"):
         predictions = _per_group(
             getattr(args, f"{task}_predictions"),
@@ -100,8 +101,9 @@ def _load_group(args, index):
             getattr(args, f"{task}_indices"),
             len(args.label),
             f"--{task}-indices",
-            Path("outputs/indices.npy"),
+            None,
         )[index]
+        selected_indices[task] = indices
         prediction_variable = _per_group(
             getattr(args, f"{task}_predictions_variable"),
             len(args.label),
@@ -125,13 +127,24 @@ def _load_group(args, index):
             predictions,
             targets,
             indices,
-            require_indices=True,
+            require_indices=indices is not None,
             prediction_variable=prediction_variable,
             target_variable=target_variable,
             indices_variable=indices_variable,
         )
+    index_values = list(selected_indices.values())
+    if any(value is not None for value in index_values) and not all(
+        value is not None for value in index_values
+    ):
+        raise ValueError(
+            "provide indices for vertex, direction, and energy together "
+            "within each label"
+        )
     assert_aligned(
-        outputs["vertex"], outputs["direction"], outputs["energy"], require_indices=True
+        outputs["vertex"],
+        outputs["direction"],
+        outputs["energy"],
+        require_indices=False,
     )
     return outputs
 

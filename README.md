@@ -103,9 +103,10 @@ analysis compare-resolution-dependencies \
 ```
 
 The command overlays vertex, angular, absolute-energy, and relative-energy
-resolution versus true Wall, true ToWall, and true energy. Each label's
-vertex/direction/energy runs must have aligned `indices.npy` files within that
-label. Different labels may use different event samples.
+resolution versus true Wall, true ToWall, and true energy. Indices are
+optional: when supplied, each label's vertex/direction/energy runs are aligned
+using their indices; when omitted, stored order is used and event counts must
+still agree. Different labels may use different event samples.
 
 The same command is available as:
 
