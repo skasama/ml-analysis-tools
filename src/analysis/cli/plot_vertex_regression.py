@@ -10,6 +10,7 @@ from analysis.metrics import residual_profile, resolution68
 from analysis.paths import output_path
 from analysis.plotting import save
 from analysis.regression import inverse_minmax, xyz
+from analysis.uncertainty import profile_uncertainty
 
 UNIT = "cm"
 EPSILON = 1.0e-10
@@ -136,6 +137,7 @@ def plot_prediction_vs_truth(
     tank_half_height,
     output_dir,
     dpi,
+    bootstrap_samples,
 ):
     """Plot x, y, z, R, and Wall predictions against truth."""
     quantities = calculate_vertex_quantities(
@@ -366,6 +368,7 @@ def plot_cylindrical_profiles(
     profile_bins,
     output_dir,
     dpi,
+    bootstrap_samples,
 ):
     """Plot vertex performance versus true R, z, and Wall."""
     quantities = calculate_vertex_quantities(
@@ -428,6 +431,12 @@ def plot_cylindrical_profiles(
             residual,
             n_bins=profile_bins,
         )
+        uncertainty = profile_uncertainty(
+            x_values,
+            residual,
+            n_bins=profile_bins,
+            n_samples=bootstrap_samples,
+        )
 
         valid = counts > 0
 
@@ -435,6 +444,18 @@ def plot_cylindrical_profiles(
             centres[valid],
             biases[valid],
             "o-",
+        )
+        axes[0, column].errorbar(
+            centres[valid],
+            biases[valid],
+            yerr=np.vstack(
+                (
+                    biases[valid] - uncertainty["bias"][0, valid],
+                    uncertainty["bias"][1, valid] - biases[valid],
+                )
+            ),
+            fmt="none",
+            capsize=3,
         )
         axes[0, column].axhline(
             0,
@@ -454,6 +475,19 @@ def plot_cylindrical_profiles(
             resolutions[valid],
             "o-",
             color="tab:orange",
+        )
+        axes[1, column].errorbar(
+            centres[valid],
+            resolutions[valid],
+            yerr=np.vstack(
+                (
+                    resolutions[valid] - uncertainty["resolution"][0, valid],
+                    uncertainty["resolution"][1, valid] - resolutions[valid],
+                )
+            ),
+            fmt="none",
+            ecolor="tab:orange",
+            capsize=3,
         )
         axes[1, column].set(
             xlabel=xlabel,
@@ -565,6 +599,12 @@ def build_parser():
         default=20,
     )
     parser.add_argument(
+        "--profile-bootstrap-samples",
+        type=int,
+        default=200,
+        help="Bootstrap samples used for profile error bars.",
+    )
+    parser.add_argument(
         "--already-cm",
         action="store_true",
         help=(
@@ -590,6 +630,9 @@ def main():
 
     if args.profile_bins <= 0:
         raise ValueError("--profile-bins must be positive.")
+
+    if args.profile_bootstrap_samples <= 0:
+        raise ValueError("--profile-bootstrap-samples must be positive.")
 
     if args.tank_radius <= 0:
         raise ValueError("--tank-radius must be positive.")
@@ -697,6 +740,7 @@ def main():
         profile_bins=args.profile_bins,
         output_dir=args.output_dir,
         dpi=args.dpi,
+        bootstrap_samples=args.profile_bootstrap_samples,
     )
 
 

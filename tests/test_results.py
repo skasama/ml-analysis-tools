@@ -12,7 +12,7 @@ from analysis.metrics import (
     vertex_metrics,
 )
 from analysis.results import MethodResult, align_by_event_id, align_results
-from analysis.uncertainty import bootstrap_metric
+from analysis.uncertainty import bootstrap_metric, profile_uncertainty
 
 
 def result(method, event_ids, predictions, targets):
@@ -103,6 +103,19 @@ def test_bootstrap_metric_returns_confidence_interval():
 
 def test_constant_prediction_uses_target_mean():
     np.testing.assert_array_equal(constant_prediction([1.0, 3.0]), [2.0, 2.0])
+
+
+def test_profile_uncertainty_returns_bias_and_resolution_intervals():
+    result = profile_uncertainty(
+        [0.0, 0.1, 1.0, 1.1],
+        [1.0, 1.2, 2.0, 2.2],
+        n_bins=2,
+        n_samples=20,
+        seed=1,
+    )
+    assert result["bias"].shape == (2, 2)
+    assert result["resolution"].shape == (2, 2)
+    assert np.all(result["bias"][0] <= result["bias"][1])
 
 
 def test_correlation_supports_pearson_and_spearman():

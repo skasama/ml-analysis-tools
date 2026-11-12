@@ -223,7 +223,9 @@ reorders each method before calculating metrics.
 
 `analysis.metrics` also provides `correlation` and `vertex_metrics`. The latter
 reports Cartesian, cylindrical-radius, Wall, 3D error, and optional ToWall
-statistics using the detector geometry.
+statistics using the detector geometry. Energy and vertex regression profile
+plots include bootstrap error bars for bias and resolution; the number of
+bootstrap samples can be adjusted with `--profile-bootstrap-samples`.
 
 ## Development
 

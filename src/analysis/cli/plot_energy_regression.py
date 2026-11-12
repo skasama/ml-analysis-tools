@@ -9,6 +9,7 @@ from analysis.metrics import resolution68
 from analysis.paths import output_path
 from analysis.plotting import save, scatter_identity
 from analysis.regression import inverse_minmax, scalar
+from analysis.uncertainty import profile_uncertainty
 
 UNIT = "MeV"
 EPSILON = 1.0e-10
@@ -348,12 +349,27 @@ def plot_binned_profiles(
     profile_bins,
     output_dir,
     dpi,
+    bootstrap_samples,
 ):
     """Plot energy metrics against true energy."""
     profile = calculate_binned_profiles(
         predictions,
         targets,
         n_bins=profile_bins,
+    )
+    absolute_uncertainty = profile_uncertainty(
+        targets,
+        predictions - targets,
+        n_bins=profile_bins,
+        n_samples=bootstrap_samples,
+    )
+    relative_valid = np.abs(targets) > EPSILON
+    relative_uncertainty = profile_uncertainty(
+        targets[relative_valid],
+        (predictions[relative_valid] - targets[relative_valid])
+        / targets[relative_valid],
+        n_bins=profile_bins,
+        n_samples=bootstrap_samples,
     )
 
     x_values = profile["bin_centres"]
@@ -391,6 +407,21 @@ def plot_binned_profiles(
         linewidth=1.8,
         markersize=5,
     )
+    axes[0, 0].errorbar(
+        x_values[valid_absolute],
+        profile["biases"][valid_absolute],
+        yerr=np.vstack(
+            (
+                profile["biases"][valid_absolute]
+                - absolute_uncertainty["bias"][0, valid_absolute],
+                absolute_uncertainty["bias"][1, valid_absolute]
+                - profile["biases"][valid_absolute],
+            )
+        ),
+        fmt="none",
+        ecolor="tab:blue",
+        capsize=3,
+    )
     axes[0, 0].axhline(
         0.0,
         color="black",
@@ -412,6 +443,21 @@ def plot_binned_profiles(
         linewidth=1.8,
         markersize=5,
     )
+    axes[0, 1].errorbar(
+        x_values[valid_absolute],
+        profile["resolutions"][valid_absolute],
+        yerr=np.vstack(
+            (
+                profile["resolutions"][valid_absolute]
+                - absolute_uncertainty["resolution"][0, valid_absolute],
+                absolute_uncertainty["resolution"][1, valid_absolute]
+                - profile["resolutions"][valid_absolute],
+            )
+        ),
+        fmt="none",
+        ecolor="tab:orange",
+        capsize=3,
+    )
     axes[0, 1].set(
         xlabel=f"True energy [{UNIT}]",
         ylabel=f"Resolution [{UNIT}]",
@@ -426,6 +472,22 @@ def plot_binned_profiles(
         color="tab:green",
         linewidth=1.8,
         markersize=5,
+    )
+    axes[1, 0].errorbar(
+        x_values[valid_relative],
+        100.0 * profile["relative_biases"][valid_relative],
+        yerr=100.0
+        * np.vstack(
+            (
+                profile["relative_biases"][valid_relative]
+                - relative_uncertainty["bias"][0, valid_relative],
+                relative_uncertainty["bias"][1, valid_relative]
+                - profile["relative_biases"][valid_relative],
+            )
+        ),
+        fmt="none",
+        ecolor="tab:green",
+        capsize=3,
     )
     axes[1, 0].axhline(
         0.0,
@@ -451,6 +513,22 @@ def plot_binned_profiles(
         color="tab:red",
         linewidth=1.8,
         markersize=5,
+    )
+    axes[1, 1].errorbar(
+        x_values[valid_relative],
+        relative_resolution_percent,
+        yerr=100.0
+        * np.vstack(
+            (
+                profile["relative_resolutions"][valid_relative]
+                - relative_uncertainty["resolution"][0, valid_relative],
+                relative_uncertainty["resolution"][1, valid_relative]
+                - profile["relative_resolutions"][valid_relative],
+            )
+        ),
+        fmt="none",
+        ecolor="tab:red",
+        capsize=3,
     )
     axes[1, 1].set(
         xlabel=f"True energy [{UNIT}]",
@@ -548,6 +626,12 @@ def build_parser():
         default=20,
     )
     parser.add_argument(
+        "--profile-bootstrap-samples",
+        type=int,
+        default=200,
+        help="Bootstrap samples used for profile error bars.",
+    )
+    parser.add_argument(
         "--dpi",
         type=int,
         default=200,
@@ -568,6 +652,9 @@ def main():
 
     if args.profile_bins <= 0:
         raise ValueError("--profile-bins must be positive.")
+
+    if args.profile_bootstrap_samples <= 0:
+        raise ValueError("--profile-bootstrap-samples must be positive.")
 
     outputs = load_outputs(
         args.run_dir,
@@ -665,6 +752,7 @@ def main():
         profile_bins=args.profile_bins,
         output_dir=args.output_dir,
         dpi=args.dpi,
+        bootstrap_samples=args.profile_bootstrap_samples,
     )
 
 
