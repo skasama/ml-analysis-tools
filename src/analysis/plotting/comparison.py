@@ -34,6 +34,51 @@ def plot_bias_resolution_comparison(metrics, *, title="Bias and resolution compa
     return figure
 
 
+def plot_classification_comparison(
+    metrics,
+    *,
+    title="Classification efficiency, purity, and mis-PID",
+):
+    """Plot class-wise classification metrics for every method."""
+    labels = sorted(
+        {label for values in metrics.values() for label in values["labels"]}
+    )
+    methods = list(metrics)
+    figure, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
+    width = 0.8 / len(methods)
+    positions = np.arange(len(labels))
+    for axis, metric, label in zip(
+        axes,
+        ("efficiency", "purity", "mis_pid"),
+        ("Efficiency", "Purity", "Mis-PID rate"),
+        strict=True,
+    ):
+        for method_index, method in enumerate(methods):
+            values = dict(
+                zip(metrics[method]["labels"], metrics[method][metric], strict=True)
+            )
+            heights = [values.get(class_label, np.nan) for class_label in labels]
+            axis.bar(
+                positions + method_index * width,
+                heights,
+                width=width,
+                label=method,
+            )
+        axis.set(
+            title=label,
+            xlabel="Class",
+            xticks=positions + width * (len(methods) - 1) / 2,
+            xticklabels=labels,
+            ylim=(0.0, 1.0),
+        )
+        axis.grid(axis="y", alpha=0.3)
+    axes[0].set_ylabel("Fraction")
+    axes[-1].legend()
+    figure.suptitle(title)
+    figure.tight_layout()
+    return figure
+
+
 def plot_residual_comparison(results, *, bins=60, title="Residual comparison"):
     """Overlay residual distributions for two or more MethodResult objects."""
     fig, ax = plt.subplots(figsize=(8, 5))

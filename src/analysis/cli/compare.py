@@ -8,6 +8,7 @@ from analysis.io import load_variable
 from analysis.metrics import classification_metrics, regression_metrics
 from analysis.plotting import (
     plot_bias_resolution_comparison,
+    plot_classification_comparison,
     plot_metric_comparison,
     plot_residual_comparison,
     save,
@@ -185,6 +186,12 @@ def main():
             bins=args.histogram_bins,
         )
         save(residual_figure, args.output_dir / "residual_comparison.png")
+    else:
+        classification_figure = plot_classification_comparison(metrics)
+        save(
+            classification_figure,
+            args.output_dir / "classification_comparison.png",
+        )
 
     for method, values in metrics.items():
         print(f"{method}: {metric}={values[metric]:.6g}")

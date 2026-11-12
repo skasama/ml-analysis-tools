@@ -126,7 +126,7 @@ def vertex_metrics(
 
 
 def classification_metrics(predictions, targets):
-    """Calculate accuracy and class-wise classification counts."""
+    """Calculate accuracy and one-vs-rest class-wise classification metrics."""
     predictions = np.asarray(predictions)
     targets = np.asarray(targets)
     predicted_labels = (
@@ -145,11 +145,27 @@ def classification_metrics(predictions, targets):
         target_index = np.flatnonzero(labels == target)[0]
         predicted_index = np.flatnonzero(labels == predicted)[0]
         confusion[target_index, predicted_index] += 1
+    true_positive = np.diag(confusion).astype(float)
+    false_negative = confusion.sum(axis=1) - true_positive
+    false_positive = confusion.sum(axis=0) - true_positive
+    true_negative = confusion.sum() - true_positive - false_negative - false_positive
+
+    def safe_divide(numerator, denominator):
+        return np.divide(
+            numerator,
+            denominator,
+            out=np.full_like(numerator, np.nan, dtype=float),
+            where=denominator != 0,
+        )
+
     return {
         "n_events": int(len(target_labels)),
         "accuracy": float(accuracy_score(target_labels, predicted_labels)),
         "labels": labels,
         "confusion_matrix": confusion,
+        "efficiency": safe_divide(true_positive, true_positive + false_negative),
+        "purity": safe_divide(true_positive, true_positive + false_positive),
+        "mis_pid": safe_divide(false_positive, false_positive + true_negative),
     }
 
 

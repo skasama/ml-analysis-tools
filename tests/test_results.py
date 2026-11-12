@@ -61,6 +61,9 @@ def test_classification_metrics_accepts_one_hot_targets():
         [[1.0, 0.0], [1.0, 0.0]],
     )
     assert metrics["accuracy"] == pytest.approx(0.5)
+    np.testing.assert_allclose(metrics["efficiency"], [0.5, np.nan], equal_nan=True)
+    np.testing.assert_allclose(metrics["purity"], [1.0, 0.0])
+    np.testing.assert_allclose(metrics["mis_pid"], [np.nan, 0.5], equal_nan=True)
 
 
 def test_resolution68_ignores_non_finite_values():

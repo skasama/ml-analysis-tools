@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 from .comparison import (
     plot_bias_resolution_comparison,
+    plot_classification_comparison,
     plot_metric_comparison,
     plot_residual_comparison,
 )
@@ -52,6 +53,7 @@ def save(fig, path, dpi=200):
 __all__ = [
     "plot_metric_comparison",
     "plot_bias_resolution_comparison",
+    "plot_classification_comparison",
     "plot_residual_comparison",
     "plot_residual_histogram",
     "save",
