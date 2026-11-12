@@ -25,6 +25,8 @@ analysis-plot-loss = "analysis.cli.plot_loss:main"
 analysis-plot-resolution-dependencies = "analysis.cli.plot_resolution_dependencies:main"
 analysis-plot-vertex = "analysis.cli.plot_vertex_regression:main"
 analysis-event-display = "analysis.cli.save_event_display_3d:main"
+analysis-inputs = "analysis.cli.inputs:main"
+analysis-compare = "analysis.cli.compare:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

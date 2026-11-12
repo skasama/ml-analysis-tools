@@ -1,6 +1,8 @@
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
+import h5py
 import numpy as np
 
 from .paths import input_path
@@ -11,6 +13,105 @@ class RunOutputs:
     predictions: np.ndarray
     targets: np.ndarray
     indices: np.ndarray | None
+
+
+@dataclass(frozen=True)
+class InputVariable:
+    """A selectable array stored in an analysis input file."""
+
+    path: Path
+    variable: str | None
+    shape: tuple[int, ...]
+    dtype: str
+
+
+def _iter_hdf5_datasets(group, prefix="") -> Iterator[tuple[str, h5py.Dataset]]:
+    for name, value in group.items():
+        dataset_name = f"{prefix}/{name}" if prefix else name
+        if isinstance(value, h5py.Dataset):
+            yield dataset_name, value
+        elif isinstance(value, h5py.Group):
+            yield from _iter_hdf5_datasets(value, dataset_name)
+
+
+def list_input_variables(
+    run_dir,
+    patterns=("*.npy", "*.npz", "*.csv", "*.h5", "*.hdf5"),
+):
+    """List selectable arrays below ``run_dir`` without loading their contents."""
+    run_dir = Path(run_dir)
+    variables = []
+    for path in sorted(
+        candidate
+        for pattern in patterns
+        for candidate in run_dir.glob(f"**/{pattern}")
+        if candidate.is_file()
+        and not any(
+            part.startswith(".") for part in candidate.relative_to(run_dir).parts
+        )
+    ):
+        suffix = path.suffix.lower()
+        if suffix == ".npy":
+            try:
+                array = np.load(path, allow_pickle=False)
+            except ValueError:
+                continue
+            variables.append(InputVariable(path, None, array.shape, str(array.dtype)))
+        elif suffix == ".npz":
+            with np.load(path, allow_pickle=False) as archive:
+                variables.extend(
+                    InputVariable(
+                        path,
+                        name,
+                        archive[name].shape,
+                        str(archive[name].dtype),
+                    )
+                    for name in archive.files
+                )
+        elif suffix in {".h5", ".hdf5"}:
+            with h5py.File(path, "r") as handle:
+                variables.extend(
+                    InputVariable(path, name, tuple(dataset.shape), str(dataset.dtype))
+                    for name, dataset in _iter_hdf5_datasets(handle)
+                )
+        else:
+            array = np.genfromtxt(path, delimiter=",", names=True)
+            shape = array.shape if array.dtype.names else tuple(array.shape)
+            variables.append(InputVariable(path, None, shape, str(array.dtype)))
+    return tuple(variables)
+
+
+def load_variable(path, variable=None):
+    """Load one array from NPY, NPZ, CSV, or HDF5 input."""
+    path = Path(path)
+    suffix = path.suffix.lower()
+    if suffix == ".npy":
+        if variable is not None:
+            raise ValueError("NPY files do not contain selectable variables")
+        return np.load(path, allow_pickle=False)
+    if suffix == ".npz":
+        with np.load(path, allow_pickle=False) as archive:
+            name = variable or (archive.files[0] if len(archive.files) == 1 else None)
+            if name is None:
+                raise ValueError(f"Variable is required for multi-array file: {path}")
+            if name not in archive:
+                raise KeyError(f"Variable {name!r} was not found in {path}")
+            return archive[name]
+    if suffix in {".h5", ".hdf5"}:
+        if not variable:
+            raise ValueError(f"Variable is required for HDF5 file: {path}")
+        with h5py.File(path, "r") as handle:
+            if variable not in handle:
+                raise KeyError(f"Variable {variable!r} was not found in {path}")
+            return np.asarray(handle[variable])
+    if suffix == ".csv":
+        return np.genfromtxt(
+            path,
+            delimiter=",",
+            names=variable is not None,
+            dtype=float,
+        )
+    raise ValueError(f"Unsupported input format: {path.suffix}")
 
 
 def load_outputs(

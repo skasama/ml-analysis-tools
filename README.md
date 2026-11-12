@@ -17,8 +17,18 @@ analysis energy \
 
 Available commands are `classification`, `classification-dependencies`,
 `direction`, `energy`, `loss`, `resolution-dependencies`, `vertex`, and
-`event-display`. Direct entry points such as `analysis-plot-energy` are also
-provided for scripts and batch jobs.
+`event-display`, plus `inputs` and `compare`. Direct entry points such as
+`analysis-plot-energy` are also provided for scripts and batch jobs.
+
+To inspect available input files and variables before selecting them:
+
+```bash
+analysis inputs --run-dir /path/to/run
+```
+
+The command lists NPY, NPZ, CSV, and HDF5 arrays with their shapes and dtypes.
+NPZ and HDF5 variables can then be loaded with
+`analysis.io.load_variable(path, variable)`.
 
 The existing files under `scripts/` remain compatible as transitional wrappers.
 New plotting commands should be added as modules under `src/analysis/cli` and
@@ -165,6 +175,19 @@ python scripts/save_event_display_3d.py \
 
 ## Comparing Analysis Methods
 
+Two or more regression runs can be compared directly. Event IDs are used to
+align runs even when their ordering differs:
+
+```bash
+analysis compare \
+  --method ml=/path/to/ml_run \
+  --method baseline=/path/to/baseline_run \
+  --metric mae \
+  --output-dir plots/comparison
+```
+
+This writes a metric comparison and an overlaid residual histogram.
+
 Results from ML and non-ML methods can be represented with the same
 `MethodResult` object. Event IDs are required so that methods can either be
 checked for identical ordering or aligned on their common event set.
@@ -197,6 +220,10 @@ metrics = compare_metrics((ml, baseline), regression_metrics)
 `align_results` should be used when identical event ordering is required;
 `align_by_event_id` explicitly selects the common event-ID intersection and
 reorders each method before calculating metrics.
+
+`analysis.metrics` also provides `correlation` and `vertex_metrics`. The latter
+reports Cartesian, cylindrical-radius, Wall, 3D error, and optional ToWall
+statistics using the detector geometry.
 
 ## Development
 

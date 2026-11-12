@@ -5,9 +5,11 @@ from analysis.baselines import constant_prediction
 from analysis.comparison import compare_methods
 from analysis.metrics import (
     classification_metrics,
+    correlation,
     regression_metrics,
     residual_profile,
     resolution68,
+    vertex_metrics,
 )
 from analysis.results import MethodResult, align_by_event_id, align_results
 from analysis.uncertainty import bootstrap_metric
@@ -101,3 +103,18 @@ def test_bootstrap_metric_returns_confidence_interval():
 
 def test_constant_prediction_uses_target_mean():
     np.testing.assert_array_equal(constant_prediction([1.0, 3.0]), [2.0, 2.0])
+
+
+def test_correlation_supports_pearson_and_spearman():
+    assert correlation([1, 2, 3], [2, 4, 6]) == pytest.approx(1.0)
+    assert correlation([1, 3, 2], [10, 30, 20], method="spearman") == pytest.approx(1.0)
+
+
+def test_vertex_metrics_include_wall_and_towall():
+    predictions = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+    targets = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
+    directions = np.array([[1.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+
+    metrics = vertex_metrics(predictions, targets, directions=directions)
+
+    assert {"r", "wall", "towall", "error_3d"} <= metrics.keys()

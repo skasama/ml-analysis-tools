@@ -1,7 +1,13 @@
 import numpy as np
 import pytest
 
-from analysis.io import RunOutputs, assert_aligned, load_outputs
+from analysis.io import (
+    RunOutputs,
+    assert_aligned,
+    list_input_variables,
+    load_outputs,
+    load_variable,
+)
 
 
 def write_outputs(run_dir, predictions, targets, indices=None):
@@ -68,3 +74,21 @@ def test_assert_aligned_checks_event_counts_and_indices():
     mismatched = RunOutputs(np.zeros((1, 1)), np.zeros((1, 1)), None)
     with pytest.raises(ValueError, match="different event counts"):
         assert_aligned(first, mismatched)
+
+
+def test_list_and_load_npz_variables(tmp_path):
+    path = tmp_path / "inputs.npz"
+    np.savez(path, features=np.ones((2, 3)), targets=np.zeros(2))
+
+    variables = list_input_variables(tmp_path)
+
+    assert [item.variable for item in variables] == ["features", "targets"]
+    np.testing.assert_array_equal(load_variable(path, "targets"), [0.0, 0.0])
+
+
+def test_load_variable_requires_name_for_multi_array_npz(tmp_path):
+    path = tmp_path / "inputs.npz"
+    np.savez(path, first=[1], second=[2])
+
+    with pytest.raises(ValueError, match="required"):
+        load_variable(path)

@@ -1,12 +1,35 @@
 import numpy as np
 from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_error
 
+from .geometry import cylindrical_radius, towall, wall
+
 
 def resolution68(values):
     """Return the 68th percentile of absolute finite values."""
     values = np.asarray(values, dtype=float)
     values = np.abs(values[np.isfinite(values)])
     return float(np.quantile(values, 0.68)) if values.size else np.nan
+
+
+def correlation(predictions, targets, *, method="pearson"):
+    """Return a finite correlation coefficient for two one-dimensional arrays."""
+    predictions = np.asarray(predictions, dtype=float).ravel()
+    targets = np.asarray(targets, dtype=float).ravel()
+    if predictions.shape != targets.shape:
+        raise ValueError("predictions and targets must have the same shape")
+    valid = np.isfinite(predictions) & np.isfinite(targets)
+    predictions, targets = predictions[valid], targets[valid]
+    if predictions.size < 2:
+        return np.nan
+    if method == "pearson":
+        if np.ptp(predictions) == 0 or np.ptp(targets) == 0:
+            return np.nan
+        return float(np.corrcoef(predictions, targets)[0, 1])
+    if method == "spearman":
+        prediction_ranks = np.argsort(np.argsort(predictions))
+        target_ranks = np.argsort(np.argsort(targets))
+        return correlation(prediction_ranks, target_ranks)
+    raise ValueError("method must be 'pearson' or 'spearman'")
 
 
 def residual_profile(x_values, residuals, *, n_bins):
@@ -54,7 +77,52 @@ def regression_metrics(predictions, targets):
         "resolution_68": float(np.quantile(absolute, 0.68)),
         "resolution_90": float(np.quantile(absolute, 0.90)),
         "outlier_rate_3sigma": float(np.mean(absolute > 3.0 * np.std(residuals))),
+        "pearson_r": correlation(predictions, targets),
     }
+
+
+def vertex_metrics(
+    predictions,
+    targets,
+    *,
+    directions=None,
+    radius=1690.0,
+    half_height=1810.0,
+):
+    """Calculate Cartesian, cylindrical, Wall, and optional ToWall metrics."""
+    predictions = np.asarray(predictions, dtype=float)
+    targets = np.asarray(targets, dtype=float)
+    if (
+        predictions.shape != targets.shape
+        or predictions.ndim != 2
+        or predictions.shape[1] != 3
+    ):
+        raise ValueError("predictions and targets must both have shape (N, 3)")
+
+    prediction_radius = cylindrical_radius(predictions)
+    target_radius = cylindrical_radius(targets)
+    prediction_wall = wall(predictions, radius=radius, half_height=half_height)
+    target_wall = wall(targets, radius=radius, half_height=half_height)
+    values = {
+        "x": regression_metrics(predictions[:, 0], targets[:, 0]),
+        "y": regression_metrics(predictions[:, 1], targets[:, 1]),
+        "z": regression_metrics(predictions[:, 2], targets[:, 2]),
+        "r": regression_metrics(prediction_radius, target_radius),
+        "wall": regression_metrics(prediction_wall, target_wall),
+        "error_3d": regression_metrics(
+            np.linalg.norm(predictions - targets, axis=1),
+            np.zeros(len(predictions)),
+        ),
+    }
+    if directions is not None:
+        directions = np.asarray(directions, dtype=float)
+        if directions.shape != predictions.shape:
+            raise ValueError("directions must have shape (N, 3)")
+        values["towall"] = regression_metrics(
+            towall(predictions, directions, radius=radius, half_height=half_height),
+            towall(targets, directions, radius=radius, half_height=half_height),
+        )
+    return values
 
 
 def classification_metrics(predictions, targets):

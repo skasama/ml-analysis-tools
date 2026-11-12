@@ -2,7 +2,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from .comparison import plot_metric_comparison
+from .comparison import plot_metric_comparison, plot_residual_comparison
 from .diagnostics import plot_residual_histogram
 
 
@@ -47,6 +47,7 @@ def save(fig, path, dpi=200):
 
 __all__ = [
     "plot_metric_comparison",
+    "plot_residual_comparison",
     "plot_residual_histogram",
     "save",
     "scatter_identity",

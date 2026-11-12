@@ -40,7 +40,7 @@ def unit(vectors):
 
     if np.any(norms <= EPSILON):
         n_invalid = int(np.sum(norms[:, 0] <= EPSILON))
-        raise ValueError(f"Found {n_invalid} zero-length direction vectors.")
+        raise ValueError(f"Found {n_invalid} Zero-length direction vectors.")
 
     return vectors / norms
 

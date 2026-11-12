@@ -10,6 +10,8 @@ COMMANDS = {
     "resolution-dependencies": "analysis.cli.plot_resolution_dependencies",
     "vertex": "analysis.cli.plot_vertex_regression",
     "event-display": "analysis.cli.save_event_display_3d",
+    "inputs": "analysis.cli.inputs",
+    "compare": "analysis.cli.compare",
 }
 
 
