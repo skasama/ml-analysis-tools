@@ -15,6 +15,25 @@ def plot_metric_comparison(metrics, *, metric, title=None):
     return fig
 
 
+def plot_bias_resolution_comparison(metrics, *, title="Bias and resolution comparison"):
+    """Plot bias and 68% resolution for every method in one figure."""
+    methods = list(metrics)
+    figure, axes = plt.subplots(1, 2, figsize=(12, 5))
+    for axis, metric, label in (
+        (axes[0], "bias", "Bias"),
+        (axes[1], "resolution_68", "68% resolution"),
+    ):
+        values = [metrics[method][metric] for method in methods]
+        axis.bar(methods, values)
+        axis.set_ylabel(label)
+        axis.set_title(label)
+        axis.grid(axis="y", alpha=0.3)
+        axis.tick_params(axis="x", rotation=20)
+    figure.suptitle(title)
+    figure.tight_layout()
+    return figure
+
+
 def plot_residual_comparison(results, *, bins=60, title="Residual comparison"):
     """Overlay residual distributions for two or more MethodResult objects."""
     fig, ax = plt.subplots(figsize=(8, 5))

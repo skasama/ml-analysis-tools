@@ -215,7 +215,8 @@ analysis compare --task classification \
   --output-dir plots/classification-comparison
 ```
 
-Regression writes a metric comparison and an overlaid residual histogram.
+Regression writes the selected metric comparison, a combined bias/68%
+resolution comparison, and an overlaid residual histogram.
 Classification writes the selected metric comparison. Event IDs are not
 loaded or aligned by this command; each prediction/truth pair is evaluated
 independently. The lower-level `compare_methods(..., align=True)` API remains

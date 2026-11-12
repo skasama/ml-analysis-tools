@@ -6,7 +6,12 @@ import numpy as np
 from analysis.comparison import compare_methods
 from analysis.io import load_variable
 from analysis.metrics import classification_metrics, regression_metrics
-from analysis.plotting import plot_metric_comparison, plot_residual_comparison, save
+from analysis.plotting import (
+    plot_bias_resolution_comparison,
+    plot_metric_comparison,
+    plot_residual_comparison,
+    save,
+)
 from analysis.results import MethodResult
 
 
@@ -170,6 +175,11 @@ def main():
     )
     save(metric_figure, args.output_dir / f"{metric}_comparison.png")
     if args.task == "regression":
+        bias_resolution_figure = plot_bias_resolution_comparison(metrics)
+        save(
+            bias_resolution_figure,
+            args.output_dir / "bias_resolution_comparison.png",
+        )
         residual_figure = plot_residual_comparison(
             tuple(results),
             bins=args.histogram_bins,
