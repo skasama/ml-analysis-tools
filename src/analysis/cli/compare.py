@@ -18,7 +18,7 @@ from analysis.plotting import (
     plot_residual_comparison,
     save,
 )
-from analysis.results import MethodResult
+from analysis.results import MethodResult, align_by_event_id
 
 
 def build_parser():
@@ -67,6 +67,21 @@ def build_parser():
         default=[],
         metavar="NAME",
         help="Variable in each target file, for NPZ/HDF5 inputs.",
+    )
+    parser.add_argument(
+        "--indices",
+        type=Path,
+        action="append",
+        default=[],
+        metavar="FILE",
+        help="Optional event-index file per method.",
+    )
+    parser.add_argument(
+        "--indices-variable",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="Variable in each index file, for NPZ/HDF5 inputs.",
     )
     parser.add_argument(
         "--truth",
@@ -130,6 +145,13 @@ def _load_results(args):
         method_count,
         "--target-variable",
     )
+    if args.indices and len(args.indices) != method_count:
+        raise ValueError("--indices must be specified once per method")
+    index_variables = _variables(
+        args.indices_variable,
+        method_count,
+        "--indices-variable",
+    )
     shared_targets = (
         load_variable(args.truth, args.truth_variable)
         if args.truth is not None
@@ -143,6 +165,17 @@ def _load_results(args):
             if shared_targets is not None
             else load_variable(args.target[index], target_variables[index])
         )
+        if args.indices:
+            event_ids = np.asarray(
+                load_variable(args.indices[index], index_variables[index])
+            ).ravel()
+            if len(event_ids) != len(targets):
+                raise ValueError(
+                    f"{method}: index and target event counts differ "
+                    f"({len(event_ids)} != {len(targets)})"
+                )
+        else:
+            event_ids = np.arange(len(targets))
         predictions = np.asarray(predictions)
         targets = np.asarray(targets)
         if len(predictions) != len(targets):
@@ -156,7 +189,7 @@ def _load_results(args):
                 task=args.task,
                 predictions=predictions,
                 targets=targets,
-                event_ids=np.arange(len(targets)),
+                event_ids=event_ids,
             )
         )
     return results
@@ -170,6 +203,8 @@ def main():
         raise ValueError("--histogram-bins must be positive")
 
     results = _load_results(args)
+    if args.indices:
+        results = list(align_by_event_id(*results))
     task = "regression" if args.task == "energy" else args.task
     metric_function = {
         "regression": regression_metrics,

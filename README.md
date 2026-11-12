@@ -304,19 +304,28 @@ analysis compare --task regression \
   --target other/result.hy --target-variable truth_variable_name
 ```
 
-When `event_index` is already stored in the same order for both results, it
-does not need to be passed to the comparison command. The command evaluates
-each prediction/truth pair in its stored order and does not require the
-indices to have the same values.
+Index files are optional. If an index file is supplied for every method, common
+event indices are used to reorder all methods before comparison:
+
+```bash
+analysis compare --task regression \
+  --method ml --prediction ml/preds.npy --target ml/targets.npy \
+  --indices ml/indices.npy \
+  --method other --prediction other/preds.npy --target other/targets.npy \
+  --indices other/indices.npy
+```
+
+Index values do not need to have the same original order. If no index files
+are supplied, each prediction/truth pair is evaluated independently in its
+stored order. For NPZ/HDF5/`.hy` index arrays, also pass
+`--indices-variable`.
 
 Regression writes the selected metric comparison, a combined bias/68%
 resolution comparison, and an overlaid residual histogram.
 Classification writes the selected accuracy comparison and
 `classification_comparison.png`, containing class-wise efficiency, purity,
 and mis-PID rate. Here, mis-PID is the one-vs-rest false-positive rate
-`FP/(FP+TN)`. Event IDs are not
-loaded or aligned by this command; each prediction/truth pair is evaluated
-independently. The lower-level `compare_methods(..., align=True)` API remains
+`FP/(FP+TN)`. The lower-level `compare_methods(..., align=True)` API remains
 available when event-level alignment is specifically required.
 
 Results from ML and non-ML methods can be represented with the same

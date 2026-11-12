@@ -131,6 +131,8 @@ def build_parser():
     parser.add_argument("--prediction-variable", action="append", default=[])
     parser.add_argument("--target", action="append", required=True, metavar="FILE")
     parser.add_argument("--target-variable", action="append", default=[])
+    parser.add_argument("--indices", action="append", default=[], metavar="FILE")
+    parser.add_argument("--indices-variable", action="append", default=[])
     parser.add_argument("--x-file", action="append", required=True, metavar="FILE")
     parser.add_argument("--x-variable", action="append", default=[])
     parser.add_argument(
@@ -157,6 +159,8 @@ def main():
         raise ValueError("at least two --method options are required")
     if len(args.prediction) != count or len(args.target) != count:
         raise ValueError("prediction and target must be specified once per method")
+    if args.indices and len(args.indices) != count:
+        raise ValueError("--indices must be specified once per method")
     if len(args.x_file) not in {1, count}:
         raise ValueError("--x-file must be specified once or once per method")
     if args.bins <= 0 or args.minimum_count <= 0:
@@ -166,6 +170,7 @@ def main():
         args.prediction_variable, count, "--prediction-variable"
     )
     target_variables = _variables(args.target_variable, count, "--target-variable")
+    index_variables = _variables(args.indices_variable, count, "--indices-variable")
     x_variables = _variables(args.x_variable, len(args.x_file), "--x-variable")
     x_files = args.x_file if len(args.x_file) == count else args.x_file * count
 
@@ -185,6 +190,52 @@ def main():
             strict=True,
         )
     ]
+    indices = None
+    if args.indices:
+        indices = [
+            _load_array(path, variable).ravel()
+            for path, variable in zip(args.indices, index_variables, strict=True)
+        ]
+        if len(args.x_file) == 1:
+            raise ValueError(
+                "when --indices is used, specify --x-file once per method "
+                "so dependencies can be aligned"
+            )
+        for method, index, prediction, target in zip(
+            args.method,
+            indices,
+            predictions,
+            targets,
+            strict=True,
+        ):
+            if len(index) != len(prediction) or len(index) != len(target):
+                raise ValueError(
+                    f"{method}: index, prediction, and target lengths must match"
+                )
+        common = set(indices[0].tolist())
+        for values in indices[1:]:
+            common.intersection_update(values.tolist())
+        if not common:
+            raise ValueError("methods have no common event indices")
+        ordered = [value for value in indices[0] if value in common]
+        aligned_predictions = []
+        aligned_targets = []
+        aligned_dependencies = []
+        for index, prediction, target, dependency in zip(
+            indices,
+            predictions,
+            targets,
+            dependencies,
+            strict=True,
+        ):
+            positions = {value: position for position, value in enumerate(index)}
+            selection = np.asarray([positions[value] for value in ordered])
+            aligned_predictions.append(prediction[selection])
+            aligned_targets.append(target[selection])
+            aligned_dependencies.append(dependency[selection])
+        predictions = aligned_predictions
+        targets = aligned_targets
+        dependencies = aligned_dependencies
     edges = _common_edges(dependencies, args.bins)
     centres = 0.5 * (edges[:-1] + edges[1:])
     args.output_dir.mkdir(parents=True, exist_ok=True)
