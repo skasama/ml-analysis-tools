@@ -114,6 +114,11 @@ The same command is available as:
 python scripts/compare_resolution_dependencies.py ...
 ```
 
+When the first group uses the default NPY layout and only a later group uses
+variable-based input, a single `--*-variable` option applies to the last label.
+This allows the ML group to omit variable names while the `others` group
+specifies variables from a `.hy` file.
+
 To overlay dependency profiles from multiple methods, use the dedicated
 command. Regression produces bias and 68% resolution panels:
 

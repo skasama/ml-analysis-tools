@@ -76,6 +76,8 @@ def build_parser():
 def _per_group(values, count, name, default):
     if not values:
         return [default] * count
+    if len(values) == 1 and count > 1:
+        return [default] * (count - 1) + values
     if len(values) != count:
         raise ValueError(f"{name} must be specified once per comparison group")
     return values
