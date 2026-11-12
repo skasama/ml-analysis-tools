@@ -26,6 +26,13 @@ def build_parser():
         )
     )
     parser.add_argument("--label", action="append", required=True)
+    parser.add_argument(
+        "--already-physical",
+        action="append",
+        default=[],
+        metavar="LABEL",
+        help="Skip inverse normalization for this label.",
+    )
     for task in ("vertex", "direction", "energy"):
         parser.add_argument(f"--{task}-run", action="append", required=True)
         parser.add_argument(f"--{task}-predictions", action="append")
@@ -151,24 +158,33 @@ def _load_group(args, index):
     return outputs
 
 
-def _calculate_group(args, outputs):
-    vertex_predictions = inverse_minmax(
-        xyz(outputs["vertex"].predictions),
-        args.vertex_minimum,
-        args.vertex_maximum,
-        source_min=args.vertex_normalized_minimum,
-        source_max=args.vertex_normalized_maximum,
+def _calculate_group(args, outputs, *, label):
+    already_physical = label in args.already_physical
+    vertex_predictions = (
+        inverse_minmax(
+            xyz(outputs["vertex"].predictions),
+            args.vertex_minimum,
+            args.vertex_maximum,
+            source_min=args.vertex_normalized_minimum,
+            source_max=args.vertex_normalized_maximum,
+        )
+        if not already_physical
+        else xyz(outputs["vertex"].predictions)
     )
-    vertex_targets = inverse_minmax(
-        xyz(outputs["vertex"].targets),
-        args.vertex_minimum,
-        args.vertex_maximum,
-        source_min=args.vertex_normalized_minimum,
-        source_max=args.vertex_normalized_maximum,
+    vertex_targets = (
+        inverse_minmax(
+            xyz(outputs["vertex"].targets),
+            args.vertex_minimum,
+            args.vertex_maximum,
+            source_min=args.vertex_normalized_minimum,
+            source_max=args.vertex_normalized_maximum,
+        )
+        if not already_physical
+        else xyz(outputs["vertex"].targets)
     )
     direction_predictions = xyz(outputs["direction"].predictions)
     direction_targets = xyz(outputs["direction"].targets)
-    if args.inverse_direction_norm:
+    if args.inverse_direction_norm and not already_physical:
         direction_predictions = inverse_minmax(
             direction_predictions,
             -1.0,
@@ -183,20 +199,24 @@ def _calculate_group(args, outputs):
             source_min=args.direction_normalized_minimum,
             source_max=args.direction_normalized_maximum,
         )
-    energy_predictions = inverse_minmax(
-        scalar(outputs["energy"].predictions),
-        args.energy_minimum,
-        args.energy_maximum,
-        source_min=args.energy_normalized_minimum,
-        source_max=args.energy_normalized_maximum,
-    )
-    energy_targets = inverse_minmax(
-        scalar(outputs["energy"].targets),
-        args.energy_minimum,
-        args.energy_maximum,
-        source_min=args.energy_normalized_minimum,
-        source_max=args.energy_normalized_maximum,
-    )
+    if already_physical:
+        energy_predictions = scalar(outputs["energy"].predictions)
+        energy_targets = scalar(outputs["energy"].targets)
+    else:
+        energy_predictions = inverse_minmax(
+            scalar(outputs["energy"].predictions),
+            args.energy_minimum,
+            args.energy_maximum,
+            source_min=args.energy_normalized_minimum,
+            source_max=args.energy_normalized_maximum,
+        )
+        energy_targets = inverse_minmax(
+            scalar(outputs["energy"].targets),
+            args.energy_minimum,
+            args.energy_maximum,
+            source_min=args.energy_normalized_minimum,
+            source_max=args.energy_normalized_maximum,
+        )
     wall_values = wall(
         vertex_targets,
         radius=args.tank_radius,
@@ -239,7 +259,12 @@ def main():
         )
 
     groups = [
-        _calculate_group(args, _load_group(args, index)) for index in range(count)
+        _calculate_group(
+            args,
+            _load_group(args, index),
+            label=args.label[index],
+        )
+        for index in range(count)
     ]
     dependency_specs = (
         ("wall", "True Wall [cm]", args.wall_bin_width),

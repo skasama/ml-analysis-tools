@@ -119,6 +119,17 @@ variable-based input, a single `--*-variable` option applies to the last label.
 This allows the ML group to omit variable names while the `others` group
 specifies variables from a `.hy` file.
 
+If a label already contains physical-unit values rather than normalized model
+outputs, disable inverse normalization for that label:
+
+```bash
+--already-physical others
+```
+
+This leaves vertex values in cm, direction values in their stored coordinate
+system, and energy values in MeV. Labels not listed with this option retain the
+default inverse normalization.
+
 To overlay dependency profiles from multiple methods, use the dedicated
 command. Regression produces bias and 68% resolution panels:
 
