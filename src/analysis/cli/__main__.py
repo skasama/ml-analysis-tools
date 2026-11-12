@@ -12,6 +12,7 @@ COMMANDS = {
     "event-display": "analysis.cli.save_event_display_3d",
     "inputs": "analysis.cli.inputs",
     "compare": "analysis.cli.compare",
+    "compare-dependencies": "analysis.cli.compare_dependencies",
 }
 
 

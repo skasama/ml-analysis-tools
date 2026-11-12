@@ -85,6 +85,27 @@ not require event IDs to match; each prediction/truth pair is evaluated in its
 own stored order. Existing dependency commands remain available for
 true-Wall/ToWall/energy dependent plots.
 
+To overlay dependency profiles from multiple methods, use the dedicated
+command. Regression produces bias and 68% resolution panels:
+
+```bash
+analysis compare-dependencies --task regression \
+  --dependency wall \
+  --method ml \
+  --prediction ml/preds.npy --target ml/targets.npy \
+  --method other \
+  --prediction other/result.hy --prediction-variable prediction \
+  --target other/result.hy --target-variable truth \
+  --x-file common/dependencies.npz --x-variable wall \
+  --bins 20 \
+  --output-dir plots/wall-comparison
+```
+
+For classification, the output contains efficiency, purity, and mis-PID
+profiles. `--x-file` may be specified once for a common dependency array or
+once per method for independent samples. The same applies to the prediction,
+truth, and dependency variables.
+
 All regression plotting commands accept variable-based input files through
 `--predictions-variable`, `--targets-variable`, and `--indices-variable`.
 This works for NPZ, HDF5, and HDF5-compatible `.hy` files while preserving the
