@@ -114,6 +114,16 @@ The same command is available as:
 python scripts/compare_resolution_dependencies.py ...
 ```
 
+For a shorter repeatable setup, copy and edit `examples/example.py`:
+
+```bash
+python examples/example.py
+```
+
+Set the run paths and `.hy` variable names at the top of that file. It
+includes the common case where ML outputs are normalized and the `others`
+values are already physical units.
+
 When the first group uses the default NPY layout and only a later group uses
 variable-based input, a single `--*-variable` option applies to the last label.
 This allows the ML group to omit variable names while the `others` group
