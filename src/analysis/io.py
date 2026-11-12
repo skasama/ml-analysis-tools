@@ -36,7 +36,7 @@ def _iter_hdf5_datasets(group, prefix="") -> Iterator[tuple[str, h5py.Dataset]]:
 
 def list_input_variables(
     run_dir,
-    patterns=("*.npy", "*.npz", "*.csv", "*.h5", "*.hdf5"),
+    patterns=("*.npy", "*.npz", "*.csv", "*.h5", "*.hdf5", "*.hy"),
 ):
     """List selectable arrays below ``run_dir`` without loading their contents."""
     run_dir = Path(run_dir)
@@ -68,7 +68,7 @@ def list_input_variables(
                     )
                     for name in archive.files
                 )
-        elif suffix in {".h5", ".hdf5"}:
+        elif suffix in {".h5", ".hdf5", ".hy"}:
             with h5py.File(path, "r") as handle:
                 variables.extend(
                     InputVariable(path, name, tuple(dataset.shape), str(dataset.dtype))
@@ -97,7 +97,7 @@ def load_variable(path, variable=None):
             if name not in archive:
                 raise KeyError(f"Variable {name!r} was not found in {path}")
             return archive[name]
-    if suffix in {".h5", ".hdf5"}:
+    if suffix in {".h5", ".hdf5", ".hy"}:
         if not variable:
             raise ValueError(f"Variable is required for HDF5 file: {path}")
         with h5py.File(path, "r") as handle:

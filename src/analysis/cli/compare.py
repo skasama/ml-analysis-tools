@@ -88,6 +88,8 @@ def build_parser():
 def _variables(values, count, label):
     if not values:
         return [None] * count
+    if len(values) == 1 and count > 1:
+        return [None] * (count - 1) + values
     if len(values) != count:
         raise ValueError(f"{label} must be specified once per method")
     return values

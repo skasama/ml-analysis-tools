@@ -26,8 +26,8 @@ To inspect available input files and variables before selecting them:
 analysis inputs --run-dir /path/to/run
 ```
 
-The command lists NPY, NPZ, CSV, and HDF5 arrays with their shapes and dtypes.
-NPZ and HDF5 variables can then be loaded with
+The command lists NPY, NPZ, CSV, HDF5, and HDF5-compatible `.hy` arrays with
+their shapes and dtypes. NPZ, HDF5, and `.hy` variables can then be loaded with
 `analysis.io.load_variable(path, variable)`.
 
 The existing files under `scripts/` remain compatible as transitional wrappers.
@@ -214,6 +214,40 @@ analysis compare --task classification \
   --method model2 --prediction model2/preds.npy --target model2/targets.npy \
   --output-dir plots/classification-comparison
 ```
+
+If a result file stores multiple HDF5-compatible variables, including a file
+with the `.hy` extension, specify the variable name separately for prediction
+and truth. The same file can be used for both:
+
+```bash
+analysis compare --task regression \
+  --method ml \
+  --prediction /path/to/ml/outputs/preds.npy \
+  --target /path/to/ml/outputs/targets.npy \
+  --method other \
+  --prediction /path/to/other/result.hy \
+  --prediction-variable prediction_variable_name \
+  --target /path/to/other/result.hy \
+  --target-variable truth_variable_name \
+  --output-dir plots/comparison
+```
+
+For a mix of NPY inputs and variable-based inputs, omit the variable option
+for the NPY result; a single `--prediction-variable` or `--target-variable`
+is applied to the last method:
+
+```bash
+analysis compare --task regression \
+  --method ml --prediction ml/preds.npy --target ml/targets.npy \
+  --method other --prediction other/result.hy \
+  --prediction-variable prediction_variable_name \
+  --target other/result.hy --target-variable truth_variable_name
+```
+
+When `event_index` is already stored in the same order for both results, it
+does not need to be passed to the comparison command. The command evaluates
+each prediction/truth pair in its stored order and does not require the
+indices to have the same values.
 
 Regression writes the selected metric comparison, a combined bias/68%
 resolution comparison, and an overlaid residual histogram.
