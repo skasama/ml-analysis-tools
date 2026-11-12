@@ -175,18 +175,51 @@ python scripts/save_event_display_3d.py \
 
 ## Comparing Analysis Methods
 
-Two or more regression runs can be compared directly. Event IDs are used to
-align runs even when their ordering differs:
+Two or more independent regression or classification results can be compared
+without requiring matching event IDs. Specify the task, method labels, files,
+and optional NPZ/HDF5 variables. For regression with one shared truth:
 
 ```bash
-analysis compare \
-  --method ml=/path/to/ml_run \
-  --method baseline=/path/to/baseline_run \
+analysis compare --task regression \
+  --method ml \
+  --prediction /path/to/ml/predictions.npy \
+  --method baseline \
+  --prediction /path/to/baseline/predictions.npy \
+  --truth /path/to/common/targets.npy \
   --metric mae \
   --output-dir plots/comparison
 ```
 
-This writes a metric comparison and an overlaid residual histogram.
+For separate truth/result pairs:
+
+```bash
+analysis compare --task regression \
+  --method model1 \
+  --prediction /path/to/model1/predictions.npz \
+  --prediction-variable predictions \
+  --target /path/to/model1/targets.npz \
+  --target-variable truth \
+  --method model2 \
+  --prediction /path/to/model2/predictions.npz \
+  --prediction-variable predictions \
+  --target /path/to/model2/targets.npz \
+  --target-variable truth
+```
+
+Classification uses the same input form and compares accuracy:
+
+```bash
+analysis compare --task classification \
+  --method model1 --prediction model1/preds.npy --target model1/targets.npy \
+  --method model2 --prediction model2/preds.npy --target model2/targets.npy \
+  --output-dir plots/classification-comparison
+```
+
+Regression writes a metric comparison and an overlaid residual histogram.
+Classification writes the selected metric comparison. Event IDs are not
+loaded or aligned by this command; each prediction/truth pair is evaluated
+independently. The lower-level `compare_methods(..., align=True)` API remains
+available when event-level alignment is specifically required.
 
 Results from ML and non-ML methods can be represented with the same
 `MethodResult` object. Event IDs are required so that methods can either be

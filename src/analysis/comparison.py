@@ -2,7 +2,7 @@ from .data import align_by_event_id
 
 
 def compare_methods(results, metric_function, *, align=True):
-    """Apply one metric function to several methods on a common event set."""
+    """Apply one metric function with optional event-ID alignment."""
     results = tuple(results)
     if align:
         results = align_by_event_id(*results)

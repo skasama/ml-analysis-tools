@@ -89,6 +89,18 @@ def test_comparison_aligns_methods_before_calculating_metrics():
     assert metrics == {"ml": 0.0, "baseline": 2.0}
 
 
+def test_comparison_can_evaluate_independent_event_sets():
+    first = result("ml", [1, 2], [1.0, 2.0], [1.0, 2.0])
+    second = result("baseline", [10, 20, 30], [4.0, 3.0, 5.0], [2.0, 1.0, 4.0])
+    metrics = compare_methods(
+        (first, second),
+        regression_metrics,
+        align=False,
+    )
+    assert metrics["ml"]["n_events"] == 2
+    assert metrics["baseline"]["n_events"] == 3
+
+
 def test_bootstrap_metric_returns_confidence_interval():
     result = bootstrap_metric(
         [0.0, 1.0, 2.0],
