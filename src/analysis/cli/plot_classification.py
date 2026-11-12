@@ -88,16 +88,19 @@ def build_parser():
         type=Path,
         default=Path("outputs/preds.npy"),
     )
+    parser.add_argument("--predictions-variable")
     parser.add_argument(
         "--targets",
         type=Path,
         default=Path("outputs/targets.npy"),
     )
+    parser.add_argument("--targets-variable")
     parser.add_argument(
         "--indices",
         type=Path,
         default=Path("outputs/indices.npy"),
     )
+    parser.add_argument("--indices-variable")
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -130,6 +133,9 @@ def main():
         args.predictions,
         args.targets,
         args.indices,
+        prediction_variable=args.predictions_variable,
+        target_variable=args.targets_variable,
+        indices_variable=args.indices_variable,
     )
 
     n_classes = outputs.predictions.shape[1]

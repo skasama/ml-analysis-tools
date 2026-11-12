@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_error
 
-from .geometry import cylindrical_radius, towall, wall
+from .geometry import cylindrical_radius, opening_angle, towall, wall
 
 
 def resolution68(values):
@@ -122,6 +122,33 @@ def vertex_metrics(
             towall(predictions, directions, radius=radius, half_height=half_height),
             towall(targets, directions, radius=radius, half_height=half_height),
         )
+    return values
+
+
+def direction_metrics(predictions, targets):
+    """Calculate component and opening-angle metrics for direction vectors."""
+    predictions = np.asarray(predictions, dtype=float)
+    targets = np.asarray(targets, dtype=float)
+    if (
+        predictions.shape != targets.shape
+        or predictions.ndim != 2
+        or predictions.shape[1] != 3
+    ):
+        raise ValueError("predictions and targets must both have shape (N, 3)")
+    angles = opening_angle(targets, predictions)
+    values = {
+        "dx": regression_metrics(predictions[:, 0], targets[:, 0]),
+        "dy": regression_metrics(predictions[:, 1], targets[:, 1]),
+        "dz": regression_metrics(predictions[:, 2], targets[:, 2]),
+        "opening_angle": {
+            "n_events": int(len(angles)),
+            "bias": float(np.mean(angles)),
+            "resolution_68": float(np.quantile(angles, 0.68)),
+            "resolution_90": float(np.quantile(angles, 0.90)),
+            "mae": float(np.mean(np.abs(angles))),
+            "rmse": float(np.sqrt(np.mean(angles**2))),
+        },
+    }
     return values
 
 

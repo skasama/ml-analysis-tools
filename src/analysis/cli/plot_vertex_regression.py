@@ -531,16 +531,19 @@ def build_parser():
         type=Path,
         default=Path("outputs/preds.npy"),
     )
+    parser.add_argument("--predictions-variable")
     parser.add_argument(
         "--targets",
         type=Path,
         default=Path("outputs/targets.npy"),
     )
+    parser.add_argument("--targets-variable")
     parser.add_argument(
         "--indices",
         type=Path,
         default=Path("outputs/indices.npy"),
     )
+    parser.add_argument("--indices-variable")
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -576,6 +579,20 @@ def build_parser():
             "Y_MAX",
             "Z_MAX",
         ),
+    )
+    parser.add_argument(
+        "--normalized-minimum",
+        nargs=3,
+        type=float,
+        default=[0.0, 0.0, 0.0],
+        metavar=("X_MIN", "Y_MIN", "Z_MIN"),
+    )
+    parser.add_argument(
+        "--normalized-maximum",
+        nargs=3,
+        type=float,
+        default=[1.0, 1.0, 1.0],
+        metavar=("X_MAX", "Y_MAX", "Z_MAX"),
     )
 
     parser.add_argument(
@@ -660,6 +677,9 @@ def main():
         args.predictions,
         args.targets,
         args.indices,
+        prediction_variable=args.predictions_variable,
+        target_variable=args.targets_variable,
+        indices_variable=args.indices_variable,
     )
 
     predictions_raw = xyz(outputs.predictions)
@@ -699,11 +719,15 @@ def main():
             predictions_raw,
             minimum,
             maximum,
+            source_min=args.normalized_minimum,
+            source_max=args.normalized_maximum,
         )
         targets = inverse_minmax(
             targets_raw,
             minimum,
             maximum,
+            source_min=args.normalized_minimum,
+            source_max=args.normalized_maximum,
         )
 
     print_statistics(

@@ -92,3 +92,23 @@ def test_load_variable_requires_name_for_multi_array_npz(tmp_path):
 
     with pytest.raises(ValueError, match="required"):
         load_variable(path)
+
+
+def test_load_outputs_accepts_variables_in_npz_files(tmp_path):
+    np.savez(
+        tmp_path / "values.npz",
+        model_output=np.array([1.0, 2.0]),
+        truth=np.array([1.0, 1.0]),
+    )
+
+    result = load_outputs(
+        tmp_path,
+        predictions="values.npz",
+        targets="values.npz",
+        indices=None,
+        prediction_variable="model_output",
+        target_variable="truth",
+    )
+
+    np.testing.assert_array_equal(result.predictions, [1.0, 2.0])
+    np.testing.assert_array_equal(result.targets, [1.0, 1.0])

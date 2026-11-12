@@ -5,7 +5,12 @@ import numpy as np
 
 from analysis.comparison import compare_methods
 from analysis.io import load_variable
-from analysis.metrics import classification_metrics, regression_metrics
+from analysis.metrics import (
+    classification_metrics,
+    direction_metrics,
+    regression_metrics,
+    vertex_metrics,
+)
 from analysis.plotting import (
     plot_bias_resolution_comparison,
     plot_classification_comparison,
@@ -22,7 +27,7 @@ def build_parser():
     )
     parser.add_argument(
         "--task",
-        choices=("regression", "classification"),
+        choices=("regression", "energy", "vertex", "direction", "classification"),
         required=True,
         help="Analysis task used to select the metrics and plots.",
     )
@@ -95,6 +100,17 @@ def _variables(values, count, label):
     return values
 
 
+def _flatten_metrics(values, prefix=""):
+    flattened = {}
+    for key, value in values.items():
+        name = f"{prefix}.{key}" if prefix else key
+        if isinstance(value, dict):
+            flattened.update(_flatten_metrics(value, name))
+        else:
+            flattened[name] = value
+    return flattened
+
+
 def _load_results(args):
     method_count = len(args.method)
     if len(args.prediction) != method_count:
@@ -154,14 +170,34 @@ def main():
         raise ValueError("--histogram-bins must be positive")
 
     results = _load_results(args)
-    metric_function = (
-        regression_metrics if args.task == "regression" else classification_metrics
+    task = "regression" if args.task == "energy" else args.task
+    metric_function = {
+        "regression": regression_metrics,
+        "vertex": vertex_metrics,
+        "direction": direction_metrics,
+        "classification": classification_metrics,
+    }[task]
+    metric = (
+        args.metric
+        or {
+            "regression": "mae",
+            "vertex": "x.mae",
+            "direction": "opening_angle.resolution_68",
+            "classification": "accuracy",
+        }[task]
     )
-    metric = args.metric or ("mae" if args.task == "regression" else "accuracy")
+    metrics = compare_methods(results, metric_function, align=False)
+    if task in {"vertex", "direction"}:
+        metrics = {
+            method: dict(_flatten_metrics(values).items())
+            for method, values in metrics.items()
+        }
     allowed_metrics = (
         {"mae", "rmse", "bias", "resolution_68", "pearson_r"}
-        if args.task == "regression"
+        if task == "regression"
         else {"accuracy"}
+        if task == "classification"
+        else set(metrics[next(iter(metrics))])
     )
     if metric not in allowed_metrics:
         raise ValueError(
@@ -169,7 +205,6 @@ def main():
             f"choose from {sorted(allowed_metrics)}"
         )
 
-    metrics = compare_methods(results, metric_function, align=False)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     metric_figure = plot_metric_comparison(
         metrics,
@@ -177,18 +212,19 @@ def main():
         title=f"{metric} comparison",
     )
     save(metric_figure, args.output_dir / f"{metric}_comparison.png")
-    if args.task == "regression":
-        bias_resolution_figure = plot_bias_resolution_comparison(metrics)
-        save(
-            bias_resolution_figure,
-            args.output_dir / "bias_resolution_comparison.png",
-        )
+    if task in {"regression", "vertex", "direction"}:
+        if task == "regression":
+            bias_resolution_figure = plot_bias_resolution_comparison(metrics)
+            save(
+                bias_resolution_figure,
+                args.output_dir / "bias_resolution_comparison.png",
+            )
         residual_figure = plot_residual_comparison(
             tuple(results),
             bins=args.histogram_bins,
         )
         save(residual_figure, args.output_dir / "residual_comparison.png")
-    else:
+    elif task == "classification":
         classification_figure = plot_classification_comparison(metrics)
         save(
             classification_figure,

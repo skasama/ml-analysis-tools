@@ -680,16 +680,19 @@ def build_parser():
             type=Path,
             default=Path("outputs/preds.npy"),
         )
+        parser.add_argument(f"--{task}-predictions-variable")
         parser.add_argument(
             f"--{task}-targets",
             type=Path,
             default=Path("outputs/targets.npy"),
         )
+        parser.add_argument(f"--{task}-targets-variable")
         parser.add_argument(
             f"--{task}-indices",
             type=Path,
             default=Path("outputs/indices.npy"),
         )
+        parser.add_argument(f"--{task}-indices-variable")
 
     parser.add_argument(
         "--output-dir",
@@ -742,6 +745,22 @@ def build_parser():
         type=float,
         default=2000.0,
     )
+    parser.add_argument(
+        "--vertex-normalized-minimum",
+        nargs=3,
+        type=float,
+        default=[0, 0, 0],
+    )
+    parser.add_argument(
+        "--vertex-normalized-maximum",
+        nargs=3,
+        type=float,
+        default=[1, 1, 1],
+    )
+    parser.add_argument("--energy-normalized-minimum", type=float, default=0.0)
+    parser.add_argument("--energy-normalized-maximum", type=float, default=1.0)
+    parser.add_argument("--direction-normalized-minimum", type=float, default=0.0)
+    parser.add_argument("--direction-normalized-maximum", type=float, default=1.0)
     parser.add_argument(
         "--inverse-direction-norm",
         action=argparse.BooleanOptionalAction,
@@ -811,24 +830,43 @@ def main():
 
     if args.energy_maximum <= args.energy_minimum:
         raise ValueError("--energy-maximum must be greater than --energy-minimum.")
+    if args.energy_normalized_maximum <= args.energy_normalized_minimum:
+        raise ValueError(
+            "--energy-normalized-maximum must be greater than "
+            "--energy-normalized-minimum."
+        )
+    if args.direction_normalized_maximum <= args.direction_normalized_minimum:
+        raise ValueError(
+            "--direction-normalized-maximum must be greater than "
+            "--direction-normalized-minimum."
+        )
 
     vertex_outputs = load_outputs(
         args.vertex_run,
         args.vertex_predictions,
         args.vertex_targets,
         args.vertex_indices,
+        prediction_variable=args.vertex_predictions_variable,
+        target_variable=args.vertex_targets_variable,
+        indices_variable=args.vertex_indices_variable,
     )
     direction_outputs = load_outputs(
         args.direction_run,
         args.direction_predictions,
         args.direction_targets,
         args.direction_indices,
+        prediction_variable=args.direction_predictions_variable,
+        target_variable=args.direction_targets_variable,
+        indices_variable=args.direction_indices_variable,
     )
     energy_outputs = load_outputs(
         args.energy_run,
         args.energy_predictions,
         args.energy_targets,
         args.energy_indices,
+        prediction_variable=args.energy_predictions_variable,
+        target_variable=args.energy_targets_variable,
+        indices_variable=args.energy_indices_variable,
     )
 
     assert_aligned(
@@ -842,19 +880,35 @@ def main():
         xyz(vertex_outputs.predictions),
         args.vertex_minimum,
         args.vertex_maximum,
+        source_min=args.vertex_normalized_minimum,
+        source_max=args.vertex_normalized_maximum,
     )
     vertex_targets = inverse_minmax(
         xyz(vertex_outputs.targets),
         args.vertex_minimum,
         args.vertex_maximum,
+        source_min=args.vertex_normalized_minimum,
+        source_max=args.vertex_normalized_maximum,
     )
 
     direction_predictions = xyz(direction_outputs.predictions)
     direction_targets = xyz(direction_outputs.targets)
 
     if args.inverse_direction_norm:
-        direction_predictions = -1.0 + 2.0 * direction_predictions
-        direction_targets = -1.0 + 2.0 * direction_targets
+        direction_predictions = inverse_minmax(
+            direction_predictions,
+            -1.0,
+            1.0,
+            source_min=args.direction_normalized_minimum,
+            source_max=args.direction_normalized_maximum,
+        )
+        direction_targets = inverse_minmax(
+            direction_targets,
+            -1.0,
+            1.0,
+            source_min=args.direction_normalized_minimum,
+            source_max=args.direction_normalized_maximum,
+        )
 
     energy_predictions = inverse_minmax(
         scalar(
@@ -863,6 +917,8 @@ def main():
         ),
         args.energy_minimum,
         args.energy_maximum,
+        source_min=args.energy_normalized_minimum,
+        source_max=args.energy_normalized_maximum,
     )
     energy_targets = inverse_minmax(
         scalar(
@@ -871,6 +927,8 @@ def main():
         ),
         args.energy_minimum,
         args.energy_maximum,
+        source_min=args.energy_normalized_minimum,
+        source_max=args.energy_normalized_maximum,
     )
 
     wall_values = wall(

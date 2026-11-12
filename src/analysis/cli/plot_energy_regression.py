@@ -583,16 +583,19 @@ def build_parser():
         type=Path,
         default=Path("outputs/preds.npy"),
     )
+    parser.add_argument("--predictions-variable")
     parser.add_argument(
         "--targets",
         type=Path,
         default=Path("outputs/targets.npy"),
     )
+    parser.add_argument("--targets-variable")
     parser.add_argument(
         "--indices",
         type=Path,
         default=Path("outputs/indices.npy"),
     )
+    parser.add_argument("--indices-variable")
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -609,6 +612,18 @@ def build_parser():
         type=float,
         default=2000.0,
         help="Maximum energy used for normalization.",
+    )
+    parser.add_argument(
+        "--normalized-minimum",
+        type=float,
+        default=0.0,
+        help="Lower bound of the stored normalized values.",
+    )
+    parser.add_argument(
+        "--normalized-maximum",
+        type=float,
+        default=1.0,
+        help="Upper bound of the stored normalized values.",
     )
     parser.add_argument(
         "--already-mev",
@@ -656,11 +671,19 @@ def main():
     if args.profile_bootstrap_samples <= 0:
         raise ValueError("--profile-bootstrap-samples must be positive.")
 
+    if args.normalized_maximum <= args.normalized_minimum:
+        raise ValueError(
+            "--normalized-maximum must be greater than --normalized-minimum."
+        )
+
     outputs = load_outputs(
         args.run_dir,
         args.predictions,
         args.targets,
         args.indices,
+        prediction_variable=args.predictions_variable,
+        target_variable=args.targets_variable,
+        indices_variable=args.indices_variable,
     )
 
     predictions_raw = scalar(
@@ -707,11 +730,15 @@ def main():
             predictions_raw,
             args.minimum,
             args.maximum,
+            source_min=args.normalized_minimum,
+            source_max=args.normalized_maximum,
         )
         targets = inverse_minmax(
             targets_raw,
             args.minimum,
             args.maximum,
+            source_min=args.normalized_minimum,
+            source_max=args.normalized_maximum,
         )
 
         print(

@@ -66,6 +66,45 @@ intervals, `analysis.config` loads validated YAML mappings, and
 are grouped under `analysis.plotting.comparison` and
 `analysis.plotting.diagnostics`.
 
+The comparison command supports independent event samples for regression,
+energy, vertex, direction, and classification:
+
+```bash
+analysis compare --task vertex \
+  --method ml --prediction ml/preds.npy --target ml/targets.npy \
+  --method other --prediction other/result.hy \
+  --prediction-variable vertex_prediction \
+  --target other/result.hy --target-variable vertex_truth \
+  --metric x.mae \
+  --output-dir plots/vertex-comparison
+```
+
+For `vertex` and `direction`, nested metrics are selected with dotted names
+such as `x.mae` or `opening_angle.resolution_68`. The comparison command does
+not require event IDs to match; each prediction/truth pair is evaluated in its
+own stored order. Existing dependency commands remain available for
+true-Wall/ToWall/energy dependent plots.
+
+All regression plotting commands accept variable-based input files through
+`--predictions-variable`, `--targets-variable`, and `--indices-variable`.
+This works for NPZ, HDF5, and HDF5-compatible `.hy` files while preserving the
+existing NPY defaults.
+
+Normalized regression values can be mapped from any source interval. For
+example, values stored in `[-1, 1]` can be converted to physical energy with:
+
+```bash
+analysis energy \
+  --run-dir /path/to/run \
+  --normalized-minimum -1 \
+  --normalized-maximum 1 \
+  --minimum 0.5 \
+  --maximum 2000
+```
+
+The same `--normalized-minimum` and `--normalized-maximum` options are
+available for vertex and direction plotting. The default remains `[0, 1]`.
+
 ## Running in Apptainer
 
 Add the local `src` directory to `PYTHONPATH`:

@@ -120,11 +120,14 @@ def load_outputs(
     targets="outputs/targets.npy",
     indices="outputs/indices.npy",
     require_indices=False,
+    prediction_variable=None,
+    target_variable=None,
+    indices_variable=None,
 ):
     pp = input_path(run_dir, predictions, "Predictions file")
     tp = input_path(run_dir, targets, "Targets file")
-    p = np.load(pp, allow_pickle=False)
-    t = np.load(tp, allow_pickle=False)
+    p = load_variable(pp, prediction_variable)
+    t = load_variable(tp, target_variable)
     if len(p) != len(t):
         raise ValueError(f"Event count mismatch: {len(p)} != {len(t)}")
     if not np.all(np.isfinite(p)) or not np.all(np.isfinite(t)):
@@ -134,7 +137,7 @@ def load_outputs(
         candidate = Path(indices)
         candidate = candidate if candidate.is_absolute() else Path(run_dir) / candidate
         if candidate.is_file():
-            idx = np.load(candidate, allow_pickle=False)
+            idx = load_variable(candidate, indices_variable)
         elif require_indices:
             raise FileNotFoundError(
                 f"Indices file was not found: {candidate.resolve()}"

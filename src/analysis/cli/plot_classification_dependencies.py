@@ -737,16 +737,19 @@ def build_parser():
         type=Path,
         default=Path("outputs/preds.npy"),
     )
+    parser.add_argument("--predictions-variable")
     parser.add_argument(
         "--targets",
         type=Path,
         default=Path("outputs/targets.npy"),
     )
+    parser.add_argument("--targets-variable")
     parser.add_argument(
         "--indices",
         type=Path,
         default=Path("outputs/indices.npy"),
     )
+    parser.add_argument("--indices-variable")
     parser.add_argument(
         "--truth-file",
         type=Path,
@@ -825,6 +828,9 @@ def main():
         args.targets,
         args.indices,
         require_indices=args.check_event_ids,
+        prediction_variable=args.predictions_variable,
+        target_variable=args.targets_variable,
+        indices_variable=args.indices_variable,
     )
 
     logits = prepare_logits(outputs.predictions)

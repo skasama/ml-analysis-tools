@@ -723,16 +723,19 @@ def build_parser():
         type=Path,
         default=Path("outputs/preds.npy"),
     )
+    parser.add_argument("--predictions-variable")
     parser.add_argument(
         "--targets",
         type=Path,
         default=Path("outputs/targets.npy"),
     )
+    parser.add_argument("--targets-variable")
     parser.add_argument(
         "--indices",
         type=Path,
         default=Path("outputs/indices.npy"),
     )
+    parser.add_argument("--indices-variable")
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -743,6 +746,18 @@ def build_parser():
         action=argparse.BooleanOptionalAction,
         default=True,
         help=("Convert direction components from [0, 1] to [-1, 1]. Default: enabled."),
+    )
+    parser.add_argument(
+        "--normalized-minimum",
+        type=float,
+        default=0.0,
+        help="Lower bound of stored direction components.",
+    )
+    parser.add_argument(
+        "--normalized-maximum",
+        type=float,
+        default=1.0,
+        help="Upper bound of stored direction components.",
     )
     parser.add_argument(
         "--histogram-bins",
@@ -772,12 +787,19 @@ def main():
 
     if args.profile_bins <= 0:
         raise ValueError("--profile-bins must be positive.")
+    if args.normalized_maximum <= args.normalized_minimum:
+        raise ValueError(
+            "--normalized-maximum must be greater than --normalized-minimum."
+        )
 
     outputs = load_outputs(
         args.run_dir,
         args.predictions,
         args.targets,
         args.indices,
+        prediction_variable=args.predictions_variable,
+        target_variable=args.targets_variable,
+        indices_variable=args.indices_variable,
     )
 
     predictions = xyz(outputs.predictions)
@@ -812,11 +834,15 @@ def main():
             predictions,
             [-1.0, -1.0, -1.0],
             [1.0, 1.0, 1.0],
+            source_min=args.normalized_minimum,
+            source_max=args.normalized_maximum,
         )
         targets = inverse_minmax(
             targets,
             [-1.0, -1.0, -1.0],
             [1.0, 1.0, 1.0],
+            source_min=args.normalized_minimum,
+            source_max=args.normalized_maximum,
         )
 
         print("Applied component-wise [0, 1] to [-1, 1] conversion.")

@@ -19,5 +19,10 @@ def xyz(x, name="values"):
     raise ValueError(f"{name} must have shape (N,3) or (N,1,3), got {x.shape}")
 
 
-def inverse_minmax(x, lo, hi):
-    return np.asarray(lo) + np.asarray(x) * (np.asarray(hi) - np.asarray(lo))
+def inverse_minmax(x, lo, hi, *, source_min=0.0, source_max=1.0):
+    """Map values from an arbitrary normalized interval into ``[lo, hi]``."""
+    if np.any(np.asarray(source_max) <= np.asarray(source_min)):
+        raise ValueError("source_max must be greater than source_min")
+    values = np.asarray(x, dtype=float)
+    fraction = (values - source_min) / (source_max - source_min)
+    return np.asarray(lo) + fraction * (np.asarray(hi) - np.asarray(lo))
