@@ -1,0 +1,169 @@
+import numpy as np
+from numpy.typing import ArrayLike, NDArray
+
+from analysis_tools.data.arrays import as_vector_array
+
+
+def normalize_vectors(
+    vectors: ArrayLike,
+) -> NDArray[np.float64]:
+    """Normalize vectors to unit length."""
+    vectors = as_vector_array(
+        vectors,
+        size=3,
+        name="vectors",
+    ).astype(float)
+
+    norms = np.linalg.norm(vectors, axis=1)
+
+    if np.any(norms == 0):
+        raise ValueError("Cannot normalize zero-length vectors.")
+
+    return vectors / norms[:, None]
+
+
+def cylindrical_radius(
+    positions: ArrayLike,
+) -> NDArray[np.float64]:
+    """Calculate cylindrical radius sqrt(x^2 + y^2)."""
+    positions = as_vector_array(
+        positions,
+        size=3,
+        name="positions",
+    ).astype(float)
+
+    return np.linalg.norm(positions[:, :2], axis=1)
+
+
+def compute_wall(
+    positions: ArrayLike,
+    *,
+    radius: float,
+    half_height: float,
+) -> NDArray[np.float64]:
+    """Calculate the shortest signed distance to a cylidrical wall.
+
+    Positive values are inside the cylinder,
+    Negative values are outside the cylinder.
+    """
+    _validate_cylinder(radius, half_height)
+
+    positions = as_vector_array(
+        positions,
+        size=3,
+        name="positions",
+    ).astype(float)
+
+    radial_distances = radius - cylindrical_radius(positions)
+    vertical_distances = half_height - np.abs(positions[:, 2])
+
+    return np.minimum(radial_distances, vertical_distances)
+
+
+def compute_towall(
+    positions: ArrayLike,
+    directions: ArrayLike,
+    *,
+    radius: float,
+    half_height: float,
+) -> NDArray[np.float64]:
+    """Calculate the distance to the wall along a direction.
+
+    Positive values are inside the cylinder,
+    Negative values are outside the cylinder.
+    """
+    _validate_cylinder(radius, half_height)
+
+    positions = as_vector_array(
+        positions,
+        size=3,
+        name="positions",
+    ).astype(float)
+    directions = normalize_vectors(directions)
+
+    if len(positions) != len(directions):
+        raise ValueError("positions and directions must have the same length.")
+
+    x = positions[:, 0]
+    y = positions[:, 1]
+    z = positions[:, 2]
+
+    dx = directions[:, 0]
+    dy = directions[:, 1]
+    dz = directions[:, 2]
+
+    # Compute the distance from each point inside a finite cylinder to the first
+    # cylinder boundary encountered along the direction vector (dx, dy, dz).
+    #
+    # The cylinder is centered on the z-axis, has radius `radius`,
+    # and extends from z = -half_height to z = +half_height.
+    #
+    # First, find the intersection with the cylindrical side wall by solving
+    #
+    #     (x + t*dx)^2 + (y + t*dy)^2 = radius^2
+    #
+    # which yields a quadratic equation:
+    #
+    #     a*t^2 + b*t + c = 0
+    #
+    # where:
+    #     a = dx^2 + dy^2
+    #     b = 2(x*dx + y*dy)
+    #     c = x^2 + y^2 - radius^2
+    #
+    # Only solutions with a non-negative discriminant correspond to valid
+    # side-wall intersections. For points inside the cylinder, the forward
+    # intersection is given by:
+    #
+    #     t = (-b + sqrt(discriminant)) / (2a)
+    #
+    # Next, compute the intersection with the top or bottom cap by solving:
+    #
+    #     z + t*dz = +half_height   (if dz > 0)
+    #     z + t*dz = -half_height   (if dz < 0)
+    #
+    # The distance to the cylinder boundary is the smaller of:
+    #     - the side-wall intersection distance
+    #     - the cap intersection distance
+    #
+    # A negative distance indicates that the starting position lies outside
+    # the cylinder, in which case the result is undefined.
+    radial_a = dx**2 + dy**2
+    radial_b = 2.0 * (x * dx + y * dy)
+    radial_c = x**2 + y**2 - radius**2
+
+    discriminant = radial_b**2 - 4.0 * radial_a * radial_c
+
+    radial_distance = np.full(len(positions), np.inf)
+    valid_radial = (radial_a > 0.0) & (discriminant >= 0.0)
+
+    radial_distance[valid_radial] = (
+        -radial_b[valid_radial] + np.sqrt(discriminant[valid_radial])
+    ) / (2.0 * radial_a[valid_radial])
+
+    vertical_distance = np.full(len(positions), np.inf)
+
+    positive_z = dz > 0.0
+    negative_z = dz < 0.0
+
+    vertical_distance[positive_z] = (half_height - z[positive_z]) / dz[positive_z]
+
+    vertical_distance[negative_z] = (-half_height - z[negative_z]) / dz[negative_z]
+
+    distances = np.minimum(radial_distance, vertical_distance)
+
+    if np.any(distances < 0.0):
+        raise ValueError("ToWall is undefined for positions outside the cylinder.")
+
+    return distances
+
+
+def _validate_cylinder(
+    radius: float,
+    half_height: float,
+) -> None:
+    if radius <= 0.0:
+        raise ValueError("radius must be positive.")
+
+    if half_height <= 0.0:
+        raise ValueError("half_height must be positive.")
