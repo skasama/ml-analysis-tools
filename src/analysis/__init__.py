@@ -1,1 +1,0 @@
-"""Shared WatChMaL analysis utilities."""
