@@ -1,8 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from analysis_tools.analysis.vertex_regression import (
+    analyze_vertex_regression,
+)
 from analysis_tools.plotting.vertex import (
+    plot_vertex_error_summary,
     plot_vertex_errors,
+    plot_vertex_prediction,
     plot_vertex_resolution,
 )
 
@@ -103,5 +108,78 @@ def test_plot_vertex_resolution_adds_to_existing_axes() -> None:
     assert returned_figure is figure
     assert returned_axis is axis
     assert len(axis.lines) == 2
+
+    plt.close(figure)
+
+
+def test_plot_vertex_error_summary() -> None:
+    result = analyze_vertex_regression(
+        predictions=[
+            [3.0, 4.0, 0.0],
+            [0.0, 0.0, 5.0],
+        ],
+        targets=[
+            [0.0, 0.0, 0.0],
+            [0.0, 0.0, 3.0],
+        ],
+        detector_radius=10.0,
+        detector_half_height=20.0,
+    )
+
+    figure, axes = plot_vertex_error_summary(
+        result,
+        bins=10,
+    )
+
+    assert axes.shape == (2, 3)
+
+    expected_labels = [
+        "x residual [cm]",
+        "y residual [cm]",
+        "z residual [cm]",
+        "Radial residual [cm]",
+        "Wall residual [cm]",
+        "3D vertex error [cm]",
+    ]
+
+    assert [axis.get_xlabel() for axis in axes.flat] == expected_labels
+
+    assert all(axis.get_ylabel() == "Events" for axis in axes.flat)
+
+    assert all(len(axis.patches) == 1 for axis in axes.flat)
+
+    plt.close(figure)
+
+
+def test_plot_vertex_prediction() -> None:
+    result = analyze_vertex_regression(
+        predictions=[
+            [3.0, 4.0, 0.0],
+            [0.0, 0.0, 5.0],
+        ],
+        targets=[
+            [0.0, 0.0, 0.0],
+            [0.0, 0.0, 3.0],
+        ],
+        detector_radius=10.0,
+        detector_half_height=20.0,
+    )
+
+    figure, axes = plot_vertex_prediction(result)
+
+    assert axes.shape == (5,)
+
+    expected_labels = [
+        ("True x [cm]", "Predicted x [cm]"),
+        ("True y [cm]", "Predicted y [cm]"),
+        ("True z [cm]", "Predicted z [cm]"),
+        ("True R [cm]", "Predicted R [cm]"),
+        ("True Wall [cm]", "Predicted Wall [cm]"),
+    ]
+
+    assert [(axis.get_xlabel(), axis.get_ylabel()) for axis in axes] == expected_labels
+
+    assert all(len(axis.collections) == 1 for axis in axes)
+    assert all(len(axis.lines) == 1 for axis in axes)
 
     plt.close(figure)

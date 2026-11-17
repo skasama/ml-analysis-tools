@@ -20,6 +20,8 @@ from analysis_tools.metrics.energy import (
 from analysis_tools.metrics.statistics import (
     bias_magnitude,
     bias_vector,
+    binned_absolute_quantile,
+    binned_bias,
     median,
     quantile,
 )
@@ -42,6 +44,8 @@ __all__ = [
     "fractional_energy_residuals",
     "bias_magnitude",
     "bias_vector",
+    "binned_absolute_quantile",
+    "binned_bias",
     "median",
     "quantile",
     "vertex_errors",

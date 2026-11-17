@@ -1,0 +1,46 @@
+name: example_vertex
+
+input:
+  predictions: /path/to/preds.npy
+  targets: /path/to/targets.npy
+
+output:
+  directory: outputs/example_vertex
+  dpi: 200
+  filenames:
+    errors: vertex_errors.png
+    prediction: vertex_prediction.png
+    profiles: vertex_profiles.png
+
+plot:
+  errors:
+    bins: 100
+    figsize: [15.0, 9.0]
+
+  prediction:
+    figsize: [20.0, 4.0]
+    color: tab:blue
+    alpha: 0.3
+    marker_size: 5.0
+
+  profiles:
+    figsize: [15.0, 9.0]
+    quantile: 0.68
+    minimum_events: 20
+    color: tab:blue
+    marker: o
+
+    radius_edges:
+      minimum: 0.0
+      maximum: 1690.0
+      width: 50.0
+
+    z_edges:
+      minimum: -1810.0
+      maximum: 1810.0
+      width: 100.0
+
+    wall_edges:
+      minimum: -100.0
+      maximum: 1000.0
+      width: 50.0

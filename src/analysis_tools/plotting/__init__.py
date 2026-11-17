@@ -15,7 +15,10 @@ from analysis_tools.plotting.energy import (
 from analysis_tools.plotting.loss import plot_loss
 from analysis_tools.plotting.output import save_figure
 from analysis_tools.plotting.vertex import (
+    plot_vertex_error_summary,
     plot_vertex_errors,
+    plot_vertex_prediction,
+    plot_vertex_profiles,
     plot_vertex_resolution,
 )
 
@@ -30,6 +33,10 @@ __all__ = [
     "plot_energy_resolution",
     "plot_loss",
     "save_figure",
+    "plot_vertex_error_summary",
     "plot_vertex_errors",
+    "plot_vertex_prediction",
     "plot_vertex_resolution",
+    "plot_vertex_profiles",
+    "plot_vertex_error_summary",
 ]
