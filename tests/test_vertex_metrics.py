@@ -1,0 +1,71 @@
+import numpy as np
+import pytest
+
+from analysis_tools.metrics.vertex import (
+    vertex_errors,
+    vertex_residuals,
+)
+
+
+def test_vertex_residuals() -> None:
+    predictions = np.array(
+        [
+            [1.0, 2.0, 3.0],
+            [5.0, 5.0, 5.0],
+        ]
+    )
+    targets = np.array(
+        [
+            [0.0, 1.0, 2.0],
+            [4.0, 6.0, 5.0],
+        ]
+    )
+
+    actual = vertex_residuals(predictions, targets)
+
+    np.testing.assert_allclose(
+        actual,
+        [
+            [1.0, 1.0, 1.0],
+            [1.0, -1.0, 0.0],
+        ],
+    )
+
+
+def test_vertex_errors() -> None:
+    predictions = np.array(
+        [
+            [3.0, 4.0, 0.0],
+            [0.0, 0.0, 2.0],
+        ]
+    )
+    targets = np.zeros((2, 3))
+
+    actual = vertex_errors(predictions, targets)
+
+    np.testing.assert_allclose(actual, [5.0, 2.0])
+
+
+def test_vertex_metrics_accept_singleton_dimension() -> None:
+    predictions = np.array([[[3.0, 4.0, 0.0]]])
+    targets = np.array([[[0.0, 0.0, 0.0]]])
+
+    actual = vertex_errors(predictions, targets)
+
+    np.testing.assert_allclose(actual, [5.0])
+
+
+def test_vertex_residuals_reject_length_mismatch() -> None:
+    with pytest.raises(ValueError, match="Array lengths do not match"):
+        vertex_residuals(
+            predictions=np.zeros((2, 3)),
+            targets=np.zeros((1, 3)),
+        )
+
+
+def test_vertex_residuals_reject_invalid_shape() -> None:
+    with pytest.raises(ValueError, match="predictions"):
+        vertex_residuals(
+            predictions=np.zeros((2, 2)),
+            targets=np.zeros((2, 3)),
+        )

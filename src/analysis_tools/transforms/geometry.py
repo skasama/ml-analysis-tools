@@ -25,7 +25,20 @@ def normalize_vectors(
 def cylindrical_radius(
     positions: ArrayLike,
 ) -> NDArray[np.float64]:
-    """Calculate cylindrical radius sqrt(x^2 + y^2)."""
+    """
+
+    Calculate cylindrical radius sqrt(x^2 + y^2).
+
+    Parameters
+    ----------
+    positions: ArrayLike
+        An array of shape (N, 3) representing N points in 3D space.
+
+    Returns
+    -------
+    NDArray[np.float64]
+        An array of shape (N,) representing the cylindrical radii of the points.
+    """
     positions = as_vector_array(
         positions,
         size=3,
@@ -41,10 +54,29 @@ def compute_wall(
     radius: float,
     half_height: float,
 ) -> NDArray[np.float64]:
-    """Calculate the shortest signed distance to a cylidrical wall.
+    """
+
+    Calculate the shortest signed distance to a cylidrical wall.
 
     Positive values are inside the cylinder,
     Negative values are outside the cylinder.
+
+    Parameters
+    ----------
+    positions: ArrayLike
+        An array of shape (N, 3) representing N points in 3D space
+    radius: float
+        The radius of the cylinder
+    half_height: float
+        Half the height of the cylinder (the cylinder extends from -half_height
+        to +half_height along the z-axis)
+
+    Returns
+    -------
+    NDArray[np.float64]
+        An array of shape (N,) representing the shortest signed distance to
+        the cylinder wall for each point. Positive values indicate points inside
+        the cylinder, while negative values indicate points outside the cylinder.
     """
     _validate_cylinder(radius, half_height)
 

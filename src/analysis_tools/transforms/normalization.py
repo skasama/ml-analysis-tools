@@ -7,13 +7,20 @@ from numpy.typing import ArrayLike, NDArray
 @dataclass(frozen=True)
 class MinMaxTransform:
     """
+
     A transform that maps values from a physical range to a normalized range.
 
+    Parameters:
+        minimum (ArrayLike): The minimum value of the physical range.
+        maximum (ArrayLike): The maximum value of the physical range.
+        normalized_minimum (ArrayLike): The minimum value of the normalized range.
+        normalized_maximum (ArrayLike): The maximum value of the normalized range.
+
     Attributes:
-        minimum: The minimum value of the physical range.
-        maximum: The maximum value of the physical range.
-        normalized_minimum: The minimum value of the normalized range.
-        normalized_maximum: The maximum value of the normalized range.
+        minimum (ArrayLike): The minimum value of the physical range.
+        maximum (ArrayLike): The maximum value of the physical range.
+        normalized_minimum (ArrayLike): The minimum value of the normalized range.
+        normalized_maximum (ArrayLike): The maximum value of the normalized range.
     """
 
     minimum: ArrayLike
@@ -39,7 +46,20 @@ class MinMaxTransform:
         object.__setattr__(self, "maximum", maximum)
 
     def forward(self, values: ArrayLike) -> NDArray[np.float64]:
-        """Transform physical values to the normalized range."""
+        """
+
+        Transform physical values to the normalized range.
+
+        Parameters
+        ----------
+        values: ArrayLike
+            The physical values to be transformed.
+
+        Returns
+        -------
+        NDArray[np.float64]
+            The transformed values in the normalized range.
+        """
         values = np.asarray(values, dtype=float)
 
         physical_range = self.maximum - self.minimum
@@ -51,7 +71,19 @@ class MinMaxTransform:
         )
 
     def inverse(self, values: ArrayLike) -> NDArray[np.float64]:
-        """Transform normalized values to the physical range."""
+        """
+        Transform normalized values to the physical range.
+
+        Parameters
+        ----------
+        values: ArrayLike
+            The normalized values to be transformed.
+
+        Returns
+        -------
+        NDArray[np.float64]
+            The transformed values in the physical range.
+        """
         values = np.asarray(values, dtype=float)
 
         physical_range = self.maximum - self.minimum

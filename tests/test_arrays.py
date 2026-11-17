@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from analysis_tools.data.arrays import (
+    as_integer_array,
     as_scalar_array,
     as_vector_array,
     validate_same_length,
@@ -72,3 +73,26 @@ def test_validate_same_length_rejects_mismatch() -> None:
             np.zeros(2),
             names=("predictions", "targets"),
         )
+
+
+def test_as_integer_array_accepts_signed_labels() -> None:
+    actual = as_integer_array([-11, 11, 13])
+
+    np.testing.assert_array_equal(actual, [-11, 11, 13])
+    assert actual.dtype == np.int64
+
+
+def test_as_integer_array_accepts_integer_valued_floats() -> None:
+    actual = as_integer_array([0.0, 1.0, -1.0])
+
+    np.testing.assert_array_equal(actual, [0, 1, -1])
+
+
+def test_as_integer_array_rejects_non_integer_values() -> None:
+    with pytest.raises(ValueError, match="integer values"):
+        as_integer_array([0.0, 1.5])
+
+
+def test_as_integer_array_rejects_non_finite_values() -> None:
+    with pytest.raises(ValueError, match="finite integer values"):
+        as_integer_array([0.0, np.nan])

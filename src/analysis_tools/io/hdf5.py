@@ -7,7 +7,20 @@ from numpy.typing import NDArray
 
 
 def list_hdf5_datasets(path: str | Path) -> list[str]:
-    """Return all dataset paths in an HDF5 file."""
+    """
+    List all dataset paths in an HDF5 file.
+    Return all dataset paths in an HDF5 file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path to the HDF5 file.
+
+    Returns
+    -------
+    list[str]
+        A list of dataset paths in the HDF5 file.
+    """
     path = _validate_hdf5_path(path)
     datasets: list[str] = []
     with h5py.File(path, "r") as file:
@@ -25,7 +38,31 @@ def load_hdf5(
     path: str | Path,
     keys: Sequence[str],
 ) -> dict[str, NDArray]:
-    """Load selected datasets from an HDF5 file."""
+    """
+
+    Load selected datasets from an HDF5 file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path to the HDF5 file.
+    keys : Sequence[str]
+        A sequence of dataset keys to be loaded from the HDF5 file.
+
+    Returns
+    -------
+    dict[str, NDArray]
+        A dictionary mapping dataset keys to their corresponding NumPy arrays.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified HDF5 file does not exist.
+    KeyError
+        If any of the specified keys are not found in the HDF5 file.
+    TypeError
+        If any of the specified keys do not correspond to datasets in the HDF5 file.
+    """
     path = _validate_hdf5_path(path)
     if not keys:
         raise ValueError("At least one dataset key is required.")

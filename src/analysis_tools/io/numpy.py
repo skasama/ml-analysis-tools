@@ -10,7 +10,22 @@ def load_npy(
     *,
     allow_pickle: bool = False,
 ) -> NDArray:
-    """Load a NumPy array from a .npy file."""
+    """
+
+    Load a NumPy array from a .npy file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path to the .npy file.
+    allow_pickle : bool, optional
+        Whether to allow loading pickled object arrays. Default is False.
+
+    Returns
+    -------
+    NDArray
+        The loaded NumPy array.
+    """
     path = _validate_input_path(path, suffixes={".npy"})
     array = np.load(path, allow_pickle=allow_pickle)
     if not isinstance(array, np.ndarray):
@@ -25,7 +40,31 @@ def save_npy(
     *,
     create_parents: bool = True,
 ) -> Path:
-    """Save an array to a .npy file."""
+    """
+
+    Save an array to a .npy file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path to the .npy file.
+    array : ArrayLike
+        The array to save.
+    create_parents : bool, optional
+        Whether to create parent directories if they don't exist. Default is True.
+
+    Returns
+    -------
+    Path
+        The path to the saved .npy file.
+    Raises
+    ------
+    ValueError
+        If the provided path does not have a .npy extension.
+    FileNotFoundError
+        If the parent directory of the provided path does not exist and create_parents
+        is False.
+    """
     path = _prepare_output_path(path, suffix=".npy", create_parents=create_parents)
 
     np.save(path, np.asanyarray(array))
@@ -38,9 +77,25 @@ def load_npz(
     keys: Sequence[str] | None = None,
     allow_pickle: bool = False,
 ) -> dict[str, NDArray]:
-    """Load arrays from a .npz archive.
+    """
+    Load arrays from a .npz archive.
 
     If keys are provided, only those arrays are loaded.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path to the .npz file.
+    keys : Sequence[str] | None, optional
+        Specific keys of arrays to load. If None, all arrays are loaded.
+        Default is None.
+    allow_pickle : bool, optional
+        Whether to allow loading pickled object arrays. Default is False.
+
+    Returns
+    -------
+    dict[str, NDArray]
+        A dictionary mapping keys to loaded NumPy arrays.
     """
     path = _validate_input_path(path, suffixes={".npz"})
 
@@ -70,7 +125,34 @@ def save_npz(
     compressed: bool = False,
     create_parents: bool = True,
 ) -> Path:
-    """Save named arrays to a .npz archive."""
+    """
+
+    Save named arrays to a .npz archive.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path to the .npz file.
+    arrays : Mapping[str, ArrayLike]
+        A mapping of names to arrays to save.
+    compressed : bool, optional
+        Whether to use compressed .npz format. Default is False.
+    create_parents : bool, optional
+        Whether to create parent directories if they don't exist. Default is True.
+
+    Returns
+    -------
+    Path
+        The path to the saved .npz file.
+
+    Raises
+    ------
+    ValueError
+        If the provided path does not have a .npz extension.
+    FileNotFoundError
+        If the parent directory of the provided path does not exist
+        and create_parents is False.
+    """
     if not arrays:
         raise ValueError("At least one array is required.")
 

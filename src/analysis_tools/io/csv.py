@@ -12,7 +12,21 @@ def load_csv(
     delimiter: str = ",",
     encoding: str = "utf-8",
 ) -> NDArray:
-    """Load tabular data from a CSV file."""
+    """
+
+    Load tabular data from a CSV file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path to the CSV file to be loaded.
+    names : bool, optional
+        Whether to use the first row of the CSV file as column names. Default is True.
+    delimiter : str, optional
+        The string used to separate values in the CSV file. Default is ",".
+    encoding : str, optional
+        The encoding of the CSV file. Default is "utf-8".
+    """
     path = _validate_csv_path(path)
 
     array = np.genfromtxt(
@@ -34,7 +48,38 @@ def save_csv(
     fmt: str | Sequence[str] = "%.18e",
     create_parents: bool = True,
 ) -> Path:
-    """Save a one- or two-dimensional NumPy array to a CSV file."""
+    """
+
+    Save a one- or two-dimensional NumPy array to a CSV file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path to the CSV file to be saved.
+    array : NDArray
+        The NumPy array to be saved.
+    column_names : Sequence[str] | None, optional
+        A sequence of column names to be used in the CSV file. If None, no column names
+        are used. Default is None.
+    delimiter : str, optional
+        The string used to separate values in the CSV file. Default is ",".
+    fmt : str | Sequence[str], optional
+        The format string(s) to be used for formatting the array elements.
+        Default is "%.18e".
+    create_parents : bool, optional
+        Whether to create parent directories if they do not exist. Default is True.
+
+    Returns
+    -------
+    Path
+        The path to the saved CSV file.
+
+    Raises
+    ------
+    ValueError
+        If the input array is not one- or two-dimensional, or if the number of column
+        names does not match the number of columns in the array.
+    """
     path = _prepare_output_path(
         path,
         create_parents=create_parents,

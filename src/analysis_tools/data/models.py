@@ -11,7 +11,17 @@ from analysis_tools.data.arrays import (
 
 @dataclass(frozen=True)
 class EventIndex:
-    """A class to represent the index of events in a dataset."""
+    """
+
+    A class to represent the index of events in a dataset.
+
+    Attributes
+    ----------
+    file_ids : NDArray
+        An array of file IDs corresponding to the events.
+    event_ids : NDArray
+        An array of event IDs corresponding to the events.
+    """
 
     file_ids: NDArray
     event_ids: NDArray
@@ -22,7 +32,22 @@ class EventIndex:
         file_ids: ArrayLike,
         event_ids: ArrayLike,
     ) -> "EventIndex":
-        """Create an EventIndex from arrays of file IDs and event IDs."""
+        """
+
+        Create an EventIndex from arrays of file IDs and event IDs.
+
+        Parameters
+        ----------
+        file_ids : ArrayLike
+            An array of file IDs.
+        event_ids : ArrayLike
+            An array of event IDs.
+
+        Returns
+        -------
+        EventIndex
+            An EventIndex instance.
+        """
         file_ids_array = as_scalar_array(file_ids, name="file_ids")
         event_ids_array = as_scalar_array(event_ids, name="event_ids")
 

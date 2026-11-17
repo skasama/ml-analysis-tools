@@ -13,7 +13,29 @@ def range_mask(
     maximum: float | None = None,
     inclusive: bool = True,
 ) -> NDArray[np.bool_]:
-    """Create a mask selecting values within a range."""
+    """
+
+    Create a mask selecting values within a range.
+
+    Parameters
+    ----------
+    values : ArrayLike
+        Input array of values to be masked.
+    minimum : float | None, optional
+        Minimum value for the range. If None, no lower bound is applied.
+    maximum : float | None, optional
+        Maximum value for the range. If None, no upper bound is applied.
+    inclusive : bool, optional
+        If True, the range is inclusive of the minimum and maximum values.
+        If False, the range is exclusive. Default is True.
+
+    Returns
+    -------
+    NDArray[np.bool_]
+        A boolean array with the same length as the input arrays, where True indicates
+        that the corresponding value is within the specified range.
+        Raises ValueError if the input values are not one-dimensional.
+    """
     values = np.asarray(values)
 
     if values.ndim != 1:
