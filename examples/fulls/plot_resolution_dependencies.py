@@ -43,24 +43,24 @@ from analysis_tools.transforms.geometry import (
 # ============================================================
 
 VERTEX_PREDICTIONS_PATH = Path(
-    "../../tmp/2026-10_gat_e100k/regression_vertex_61467821_e100k/outputs/preds.npy"
+    "path/to/vertex/outputs/preds.npy"
 )
 VERTEX_TARGETS_PATH = Path(
-    "../../tmp/2026-10_gat_e100k/regression_vertex_61467821_e100k/outputs/targets.npy"
+    "path/to/vertex/outputs/targets.npy"
 )
 
 DIRECTION_PREDICTIONS_PATH = Path(
-    "../../tmp/2026-10_gat_e100k/regression_directions_64914021_e100k/outputs/preds.npy"
+    "path/to/direction/outputs/preds.npy"
 )
 DIRECTION_TARGETS_PATH = Path(
-    "../../tmp/2026-10_gat_e100k/regression_directions_64914021_e100k/outputs/targets.npy"
+    "path/to/direction/outputs/targets.npy"
 )
 
 ENERGY_PREDICTIONS_PATH = Path(
-    "../../tmp/2026-10_gat_e100k/regression_energy_62378219_e100k/outputs/preds.npy"
+    "path/to/energy/outputs/preds.npy"
 )
 ENERGY_TARGETS_PATH = Path(
-    "../../tmp/2026-10_gat_e100k/regression_energy_62378219_e100k/outputs/targets.npy"
+    "path/to/energy/outputs/targets.npy"
 )
 
 
