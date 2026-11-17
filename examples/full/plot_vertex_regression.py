@@ -29,10 +29,10 @@ from analysis_tools.transforms import MinMaxTransform
 # ============================================================
 
 PREDICTIONS_PATH = Path(
-    "../../tmp/2026-10_gat_e100k/regression_vertex_61467821_e100k/outputs/preds.npy"
+    "path/to/outputs/preds.npy"
 )
 TARGETS_PATH = Path(
-    "../../tmp/2026-10_gat_e100k/regression_vertex_61467821_e100k/outputs/targets.npy"
+    "path/to/outputs/targets.npy"
 )
 
 OUTPUT_DIRECTORY = Path("outputs/vertex")
