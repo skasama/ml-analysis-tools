@@ -6,7 +6,6 @@ import numpy as np
 from analysis_tools.io import load_npy
 from analysis_tools.plotting import plot_vertex_errors, save_figure
 
-
 FIRST = Path("path/to/first_errors.npy")
 SECOND = Path("path/to/second_errors.npy")
 OUTPUT = Path("outputs/comparison.png")
