@@ -245,3 +245,44 @@ def _binned_statistic(
             raise ValueError(f"Unknown statistic: {statistic}")
 
     return centers, results, counts
+
+
+def pearson_correlation(
+    x: ArrayLike,
+    y: ArrayLike,
+) -> float:
+    """
+
+    Calculate the Pearson correlation coefficient.
+
+    Parameters
+    ----------
+    x : ArrayLike
+        The first set of values.
+    y : ArrayLike
+        The second set of values.
+
+    Returns
+    -------
+    float
+        The Pearson correlation coefficient between x and y.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+
+    if x.shape != y.shape:
+        raise ValueError(
+            f"x and y must have the same shape, got {x.shape} and {y.shape}."
+        )
+
+    finite = np.isfinite(x) & np.isfinite(y)
+    x = x[finite].ravel()
+    y = y[finite].ravel()
+
+    if x.size < 2:
+        raise ValueError("At least two finite pairs are required.")
+
+    if np.all(x == x[0]) or np.all(y == y[0]):
+        raise ValueError("Pearson correlation is undefined for constant values.")
+
+    return float(np.corrcoef(x, y)[0, 1])

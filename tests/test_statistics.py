@@ -7,6 +7,7 @@ from analysis_tools.metrics.statistics import (
     binned_absolute_quantile,
     binned_bias,
     median,
+    pearson_correlation,
     quantile,
 )
 
@@ -123,4 +124,55 @@ def test_binned_absolute_quantile_rejects_invalid_quantile() -> None:
             residuals=[1.0],
             edges=[0.0, 2.0],
             quantile_level=1.5,
+        )
+
+
+def test_pearson_correlation() -> None:
+    actual = pearson_correlation(
+        [1.0, 2.0, 3.0],
+        [2.0, 4.0, 6.0],
+    )
+
+    assert actual == pytest.approx(1.0)
+
+
+def test_pearson_correlation_negative() -> None:
+    actual = pearson_correlation(
+        [1.0, 2.0, 3.0],
+        [6.0, 4.0, 2.0],
+    )
+
+    assert actual == pytest.approx(-1.0)
+
+
+def test_pearson_correlation_ignores_nonfinite_pairs() -> None:
+    actual = pearson_correlation(
+        [1.0, 2.0, np.nan, 3.0],
+        [2.0, 4.0, 5.0, 6.0],
+    )
+
+    assert actual == pytest.approx(1.0)
+
+
+def test_pearson_correlation_rejects_different_shapes() -> None:
+    with pytest.raises(ValueError, match="same shape"):
+        pearson_correlation(
+            [1.0, 2.0],
+            [1.0],
+        )
+
+
+def test_pearson_correlation_rejects_constant_values() -> None:
+    with pytest.raises(ValueError, match="constant"):
+        pearson_correlation(
+            [1.0, 1.0, 1.0],
+            [1.0, 2.0, 3.0],
+        )
+
+
+def test_pearson_correlation_requires_two_finite_pairs() -> None:
+    with pytest.raises(ValueError, match="two finite pairs"):
+        pearson_correlation(
+            [1.0, np.nan],
+            [2.0, 3.0],
         )

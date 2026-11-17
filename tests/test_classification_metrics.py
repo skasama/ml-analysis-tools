@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from analysis_tools.metrics.classification import (
+    binned_classification_metrics,
     class_metrics,
     classification_accuracy,
     classification_efficiency,
@@ -220,3 +221,81 @@ def test_roc_curve_rejects_missing_positive_class() -> None:
             targets=[0, 0],
             positive_label=1,
         )
+
+
+def test_binned_classification_metrics() -> None:
+    centers, efficiency, purity, counts = binned_classification_metrics(
+        x=[0.5, 1.5, 2.5, 3.5],
+        predictions=[1, 0, 1, 1],
+        targets=[1, 1, 0, 1],
+        edges=[0.0, 2.0, 4.0],
+        class_label=1,
+    )
+
+    np.testing.assert_allclose(
+        centers,
+        [1.0, 3.0],
+    )
+    np.testing.assert_allclose(
+        efficiency,
+        [0.5, 1.0],
+    )
+    np.testing.assert_allclose(
+        purity,
+        [1.0, 0.5],
+    )
+    np.testing.assert_array_equal(
+        counts,
+        [2, 2],
+    )
+
+
+def test_binned_classification_metrics_supports_signed_labels() -> None:
+    _, efficiency, purity, _ = binned_classification_metrics(
+        x=[0.5, 1.5, 2.5],
+        predictions=[-11, 13, -11],
+        targets=[-11, -11, 13],
+        edges=[0.0, 3.0],
+        class_label=-11,
+    )
+
+    np.testing.assert_allclose(
+        efficiency,
+        [0.5],
+    )
+    np.testing.assert_allclose(
+        purity,
+        [0.5],
+    )
+
+
+def test_binned_classification_metrics_masks_low_statistics() -> None:
+    _, efficiency, purity, counts = binned_classification_metrics(
+        x=[0.5, 2.5],
+        predictions=[1, 1],
+        targets=[1, 0],
+        edges=[0.0, 2.0, 4.0],
+        class_label=1,
+        minimum_events=2,
+    )
+
+    assert np.all(np.isnan(efficiency))
+    assert np.all(np.isnan(purity))
+
+    np.testing.assert_array_equal(
+        counts,
+        [1, 1],
+    )
+
+
+def test_binned_classification_metrics_returns_nan_for_empty_denominator() -> None:
+    _, efficiency, purity, _ = binned_classification_metrics(
+        x=[0.5, 1.5],
+        predictions=[0, 0],
+        targets=[0, 0],
+        edges=[0.0, 2.0],
+        class_label=1,
+    )
+
+    assert np.isnan(efficiency[0])
+    assert np.isnan(purity[0])

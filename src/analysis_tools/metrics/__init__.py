@@ -1,5 +1,6 @@
 from analysis_tools.metrics.classification import (
     auc,
+    binned_classification_metrics,
     class_metrics,
     classification_accuracy,
     classification_efficiency,
@@ -30,6 +31,7 @@ from analysis_tools.metrics.statistics import (
     binned_absolute_quantile,
     binned_bias,
     median,
+    pearson_correlation,
     quantile,
 )
 from analysis_tools.metrics.vertex import (
@@ -45,6 +47,7 @@ __all__ = [
     "binned_quantile",
     "make_bin_edges",
     "classification_efficiency",
+    "binned_classification_metrics",
     "classification_purity",
     "confusion_matrix",
     "predicted_labels",
@@ -61,6 +64,7 @@ __all__ = [
     "binned_absolute_quantile",
     "binned_bias",
     "median",
+    "pearson_correlation",
     "quantile",
     "vertex_errors",
     "vertex_residuals",

@@ -532,3 +532,114 @@ def _safe_diagonal_ratio(
     )
 
     return result
+
+
+def binned_classification_metrics(
+    x: ArrayLike,
+    predictions: ArrayLike,
+    targets: ArrayLike,
+    edges: ArrayLike,
+    *,
+    class_label: int,
+    minimum_events: int = 1,
+) -> tuple[
+    NDArray[np.float64],
+    NDArray[np.float64],
+    NDArray[np.float64],
+    NDArray[np.int64],
+]:
+    """Calculate efficiency and purity for one class in each x bin."""
+    x = as_scalar_array(
+        x,
+        name="x",
+    ).astype(float)
+    predictions = as_integer_array(
+        predictions,
+        name="predictions",
+    )
+    targets = as_integer_array(
+        targets,
+        name="targets",
+    )
+    edges = as_scalar_array(
+        edges,
+        name="edges",
+    ).astype(float)
+
+    validate_same_length(
+        x,
+        predictions,
+        targets,
+        names=("x", "predictions", "targets"),
+    )
+
+    if minimum_events < 1:
+        raise ValueError("minimum_events must be at least 1.")
+
+    if len(edges) < 2:
+        raise ValueError("At least two bin edges are required.")
+
+    if np.any(np.diff(edges) <= 0.0):
+        raise ValueError("Bin edges must be strictly increasing.")
+
+    centers = 0.5 * (edges[:-1] + edges[1:])
+
+    efficiencies = np.full(
+        len(centers),
+        np.nan,
+        dtype=float,
+    )
+    purities = np.full(
+        len(centers),
+        np.nan,
+        dtype=float,
+    )
+    counts = np.zeros(
+        len(centers),
+        dtype=np.int64,
+    )
+
+    finite = np.isfinite(x)
+    x = x[finite]
+    predictions = predictions[finite]
+    targets = targets[finite]
+
+    bin_indices = (
+        np.digitize(
+            x,
+            edges,
+        )
+        - 1
+    )
+
+    bin_indices[x == edges[-1]] = len(centers) - 1
+
+    for index in range(len(centers)):
+        selected = bin_indices == index
+        counts[index] = np.count_nonzero(selected)
+
+        if counts[index] < minimum_events:
+            continue
+
+        bin_predictions = predictions[selected]
+        bin_targets = targets[selected]
+
+        true_class = bin_targets == class_label
+        predicted_class = bin_predictions == class_label
+
+        true_count = np.count_nonzero(true_class)
+        predicted_count = np.count_nonzero(predicted_class)
+        correct_count = np.count_nonzero(true_class & predicted_class)
+
+        if true_count > 0:
+            efficiencies[index] = correct_count / true_count
+
+        if predicted_count > 0:
+            purities[index] = correct_count / predicted_count
+
+    return (
+        centers,
+        efficiencies,
+        purities,
+        counts,
+    )
