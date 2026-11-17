@@ -207,3 +207,60 @@ def _prepare_output_path(
         raise FileNotFoundError(path.parent)
 
     return path
+
+
+def load_array_pair(
+    first_path: str | Path,
+    second_path: str | Path,
+    *,
+    first_name: str = "first",
+    second_name: str = "second",
+    validate_length: bool = True,
+    allow_pickle: bool = False,
+) -> tuple[NDArray, NDArray]:
+    """
+
+    Load two NumPy arrays and optionally validate their lengths.
+
+    Parameters
+    ----------
+    first_path : str | Path
+        Path to the first .npy file.
+    second_path : str | Path
+        Path to the second .npy file.
+    first_name : str, optional
+        Name for the first array, used in error messages. Default is "first".
+    second_name : str, optional
+        Name for the second array, used in error messages. Default is "second".
+    validate_length : bool, optional
+        Whether to validate that the two arrays have the same length. Default is True.
+    allow_pickle : bool, optional
+        Whether to allow loading pickled object arrays. Default is False.
+
+    Returns
+    -------
+    tuple[NDArray, NDArray]
+        A tuple containing the two loaded NumPy arrays.
+
+    Raises
+    ------
+    ValueError
+        If validate_length is True and the arrays have different lengths.
+    """
+    first = load_npy(
+        first_path,
+        allow_pickle=allow_pickle,
+    )
+    second = load_npy(
+        second_path,
+        allow_pickle=allow_pickle,
+    )
+
+    if validate_length and len(first) != len(second):
+        raise ValueError(
+            "Array lengths do not match: "
+            f"{first_name}={len(first)}, "
+            f"{second_name}={len(second)}"
+        )
+
+    return first, second

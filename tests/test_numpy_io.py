@@ -1,7 +1,13 @@
 import numpy as np
 import pytest
 
-from analysis_tools.io.numpy import load_npy, load_npz, save_npy, save_npz
+from analysis_tools.io.numpy import (
+    load_array_pair,
+    load_npy,
+    load_npz,
+    save_npy,
+    save_npz,
+)
 
 
 def test_save_and_load_npy(tmp_path) -> None:
@@ -64,3 +70,57 @@ def test_load_npy_rejects_missing_file(tmp_path) -> None:
 def test_save_npz_rejects_empty_mapping(tmp_path) -> None:
     with pytest.raises(ValueError, match="At least one array"):
         save_npz(tmp_path / "empty.npz", {})
+
+
+def test_load_array_pair(tmp_path) -> None:
+    first_path = tmp_path / "predictions.npy"
+    second_path = tmp_path / "targets.npy"
+
+    save_npy(first_path, [1.0, 2.0, 3.0])
+    save_npy(second_path, [1.5, 2.5, 3.5])
+
+    first, second = load_array_pair(
+        first_path,
+        second_path,
+        first_name="predictions",
+        second_name="targets",
+    )
+
+    np.testing.assert_allclose(first, [1.0, 2.0, 3.0])
+    np.testing.assert_allclose(second, [1.5, 2.5, 3.5])
+
+
+def test_load_array_pair_rejects_length_mismatch(tmp_path) -> None:
+    first_path = tmp_path / "predictions.npy"
+    second_path = tmp_path / "targets.npy"
+
+    save_npy(first_path, [1.0, 2.0])
+    save_npy(second_path, [1.0])
+
+    with pytest.raises(
+        ValueError,
+        match="predictions=2, targets=1",
+    ):
+        load_array_pair(
+            first_path,
+            second_path,
+            first_name="predictions",
+            second_name="targets",
+        )
+
+
+def test_load_array_pair_can_skip_length_validation(tmp_path) -> None:
+    first_path = tmp_path / "first.npy"
+    second_path = tmp_path / "second.npy"
+
+    save_npy(first_path, [1.0, 2.0])
+    save_npy(second_path, [1.0])
+
+    first, second = load_array_pair(
+        first_path,
+        second_path,
+        validate_length=False,
+    )
+
+    assert len(first) == 2
+    assert len(second) == 1

@@ -5,6 +5,7 @@ import pytest
 from analysis_tools.io.hdf5 import (
     list_hdf5_datasets,
     load_hdf5,
+    save_hdf5,
 )
 
 
@@ -56,3 +57,56 @@ def test_load_hdf5_requires_keys(hdf5_path) -> None:
 def test_load_hdf5_rejects_missing_file(tmp_path) -> None:
     with pytest.raises(FileNotFoundError):
         load_hdf5(tmp_path / "missing.hy", keys=["data"])
+
+
+def test_save_and_load_hdf5(tmp_path) -> None:
+    path = tmp_path / "data.hy"
+
+    returned_path = save_hdf5(
+        path,
+        {
+            "multi/labels": np.array([0, 1, 2]),
+            "multi/positions": np.arange(9).reshape(3, 3),
+        },
+    )
+
+    actual = load_hdf5(
+        path,
+        keys=["multi/labels", "multi/positions"],
+    )
+
+    assert returned_path == path
+    np.testing.assert_array_equal(actual["multi/labels"], [0, 1, 2])
+    np.testing.assert_array_equal(
+        actual["multi/positions"],
+        np.arange(9).reshape(3, 3),
+    )
+
+
+def test_save_hdf5_rejects_existing_file(tmp_path) -> None:
+    path = tmp_path / "data.hy"
+
+    save_hdf5(path, {"values": [1, 2, 3]})
+
+    with pytest.raises(FileExistsError):
+        save_hdf5(path, {"values": [4, 5, 6]})
+
+
+def test_save_hdf5_can_overwrite_file(tmp_path) -> None:
+    path = tmp_path / "data.hy"
+
+    save_hdf5(path, {"values": [1, 2, 3]})
+    save_hdf5(
+        path,
+        {"values": [4, 5]},
+        overwrite=True,
+    )
+
+    actual = load_hdf5(path, keys=["values"])
+
+    np.testing.assert_array_equal(actual["values"], [4, 5])
+
+
+def test_save_hdf5_rejects_empty_mapping(tmp_path) -> None:
+    with pytest.raises(ValueError, match="At least one array"):
+        save_hdf5(tmp_path / "empty.hy", {})

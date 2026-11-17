@@ -1,9 +1,9 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 import h5py
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
 
 def list_hdf5_datasets(path: str | Path) -> list[str]:
@@ -96,5 +96,62 @@ def _validate_hdf5_path(path: str | Path) -> Path:
 
     if path.suffix.lower() not in (".h5", ".hdf5", ".hy"):
         raise ValueError(f"Unsupported HDF5 file extension: {path}")
+
+    return path
+
+
+def save_hdf5(
+    path: str | Path,
+    arrays: Mapping[str, ArrayLike],
+    *,
+    compression: str | None = "gzip",
+    overwrite: bool = False,
+    create_parents: bool = True,
+) -> Path:
+    """
+
+    Save named arrays to an HDF5 file.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path to the HDF5 file.
+    arrays : Mapping[str, ArrayLike]
+        A mapping of names to arrays to save.
+    compression : str | None, optional
+        Compression strategy to use for the datasets. Default is "gzip".
+    overwrite : bool, optional
+        Whether to overwrite the file if it already exists. Default is False.
+    create_parents : bool, optional
+        Whether to create parent directories if they don't exist. Default is True.
+
+    Returns
+    -------
+    Path
+        The path to the saved HDF5 file.
+    """
+    path = Path(path).expanduser()
+
+    if path.suffix.lower() not in {".h5", ".hdf5", ".hy"}:
+        raise ValueError(f"Unsupported HDF5 file extension: {path}")
+
+    if not arrays:
+        raise ValueError("At least one array is required.")
+
+    if path.exists() and not overwrite:
+        raise FileExistsError(path)
+
+    if create_parents:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    elif not path.parent.exists():
+        raise FileNotFoundError(path.parent)
+
+    with h5py.File(path, "w") as file:
+        for key, values in arrays.items():
+            file.create_dataset(
+                key,
+                data=np.asarray(values),
+                compression=compression,
+            )
 
     return path

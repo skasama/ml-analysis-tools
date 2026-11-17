@@ -3,6 +3,12 @@ from analysis_tools.data.alignment import (
     validate_aligned,
     validate_unique_keys,
 )
+from analysis_tools.data.arrays import (
+    as_integer_array,
+    as_scalar_array,
+    as_vector_array,
+    validate_same_length,
+)
 from analysis_tools.data.models import EventIndex
 from analysis_tools.data.selection import (
     apply_mask,
@@ -10,14 +16,8 @@ from analysis_tools.data.selection import (
     combine_masks,
     range_mask,
 )
-from analysis_tools.io.hdf5 import (
-    list_hdf5_datasets,
-    load_hdf5,
-)
 
 __all__ = [
-    "list_hdf5_datasets",
-    "load_hdf5",
     "EventIndex",
     "find_duplicate_keys",
     "validate_aligned",
@@ -26,4 +26,8 @@ __all__ = [
     "apply_mask_to_mapping",
     "combine_masks",
     "range_mask",
+    "as_scalar_array",
+    "as_vector_array",
+    "validate_same_length",
+    "as_integer_array",
 ]
