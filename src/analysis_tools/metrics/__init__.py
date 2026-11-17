@@ -1,8 +1,15 @@
 from analysis_tools.metrics.classification import (
+    auc,
+    class_metrics,
+    classification_accuracy,
     classification_efficiency,
     classification_purity,
     confusion_matrix,
     predicted_labels,
+    roc_auc,
+    roc_curve,
+    softmax,
+    threshold_metrics,
 )
 from analysis_tools.metrics.common import (
     bin_centers,
@@ -31,6 +38,9 @@ from analysis_tools.metrics.vertex import (
 )
 
 __all__ = [
+    "auc",
+    "class_metrics",
+    "classification_accuracy",
     "bin_centers",
     "binned_quantile",
     "make_bin_edges",
@@ -38,6 +48,10 @@ __all__ = [
     "classification_purity",
     "confusion_matrix",
     "predicted_labels",
+    "roc_auc",
+    "roc_curve",
+    "softmax",
+    "threshold_metrics",
     "direction_cosines",
     "direction_errors",
     "energy_residuals",

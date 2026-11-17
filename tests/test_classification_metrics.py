@@ -2,10 +2,16 @@ import numpy as np
 import pytest
 
 from analysis_tools.metrics.classification import (
+    class_metrics,
+    classification_accuracy,
     classification_efficiency,
     classification_purity,
     confusion_matrix,
     predicted_labels,
+    roc_auc,
+    roc_curve,
+    softmax,
+    threshold_metrics,
 )
 
 
@@ -109,3 +115,108 @@ def test_confusion_matrix_rejects_non_integer_labels() -> None:
 def test_predicted_labels_rejects_invalid_shape() -> None:
     with pytest.raises(ValueError, match=r"\(N, C\)"):
         predicted_labels([0.1, 0.9])
+
+
+def test_softmax() -> None:
+    probabilities = softmax(
+        [
+            [1.0, 2.0, 3.0],
+            [1000.0, 1001.0, 1002.0],
+        ]
+    )
+
+    np.testing.assert_allclose(
+        probabilities.sum(axis=1),
+        [1.0, 1.0],
+    )
+    np.testing.assert_allclose(
+        probabilities[0],
+        probabilities[1],
+    )
+
+
+def test_classification_accuracy() -> None:
+    actual = classification_accuracy(
+        predictions=[-11, 13, 13, 11],
+        targets=[-11, 11, 13, 11],
+    )
+
+    assert actual == pytest.approx(0.75)
+
+
+def test_class_metrics() -> None:
+    labels, efficiency, purity = class_metrics(
+        predictions=[-11, 13, 13, 11],
+        targets=[-11, 11, 13, 11],
+        class_labels=[-11, 11, 13],
+    )
+
+    np.testing.assert_array_equal(labels, [-11, 11, 13])
+    np.testing.assert_allclose(
+        efficiency,
+        [1.0, 0.5, 1.0],
+    )
+    np.testing.assert_allclose(
+        purity,
+        [1.0, 1.0, 0.5],
+    )
+
+
+def test_roc_curve() -> None:
+    false_positive_rate, true_positive_rate, thresholds = roc_curve(
+        scores=[0.1, 0.4, 0.35, 0.8],
+        targets=[0, 0, 1, 1],
+        positive_label=1,
+    )
+
+    np.testing.assert_allclose(
+        false_positive_rate,
+        [0.0, 0.0, 0.5, 0.5, 1.0],
+    )
+    np.testing.assert_allclose(
+        true_positive_rate,
+        [0.0, 0.5, 0.5, 1.0, 1.0],
+    )
+    assert np.isinf(thresholds[0])
+
+
+def test_roc_auc() -> None:
+    actual = roc_auc(
+        scores=[0.1, 0.4, 0.35, 0.8],
+        targets=[0, 0, 1, 1],
+        positive_label=1,
+    )
+
+    assert actual == pytest.approx(0.75)
+
+
+def test_threshold_metrics() -> None:
+    thresholds, efficiency, purity = threshold_metrics(
+        scores=[0.1, 0.4, 0.35, 0.8],
+        targets=[0, 0, 1, 1],
+        thresholds=[0.0, 0.4, 0.9],
+        positive_label=1,
+    )
+
+    np.testing.assert_allclose(
+        thresholds,
+        [0.0, 0.4, 0.9],
+    )
+    np.testing.assert_allclose(
+        efficiency,
+        [1.0, 0.5, 0.0],
+    )
+    np.testing.assert_allclose(
+        purity[:2],
+        [0.5, 0.5],
+    )
+    assert np.isnan(purity[2])
+
+
+def test_roc_curve_rejects_missing_positive_class() -> None:
+    with pytest.raises(ValueError, match="No events"):
+        roc_curve(
+            scores=[0.1, 0.2],
+            targets=[0, 0],
+            positive_label=1,
+        )
