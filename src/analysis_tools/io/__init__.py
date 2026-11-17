@@ -1,3 +1,9 @@
+from analysis_tools.io.config import (
+    load_analysis_config,
+    load_yaml,
+    merge_configs,
+    resolve_run_path,
+)
 from analysis_tools.io.hdf5 import (
     list_hdf5_datasets,
     load_hdf5,
@@ -12,6 +18,10 @@ from analysis_tools.io.numpy import (
 )
 
 __all__ = [
+    "load_analysis_config",
+    "load_yaml",
+    "merge_configs",
+    "resolve_run_path",
     "load_npy",
     "load_npz",
     "save_npy",

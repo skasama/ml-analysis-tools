@@ -1,0 +1,27 @@
+name: example_loss
+
+watchmal_root: /path/to/WatChMaL
+run_directory: /path/to/run
+
+output:
+  path: outputs/example_loss.png
+  dpi: 200
+
+plot:
+  figsize: [15.0, 5.0]
+  zoom_percentiles: [2.0, 98.0]
+
+  training:
+    color: tab:blue
+    linewidth: 1.5
+    alpha: 0.35
+
+  validation:
+    color: tab:orange
+    linewidth: 2.5
+    marker: o
+    markersize: 4.0
+
+  best:
+    color: crimson
+    size: 35

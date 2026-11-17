@@ -1,0 +1,19 @@
+sample:
+  name: example_sample
+
+detector:
+  radius_cm: 1690.0
+  half_height_cm: 1810.0
+
+normalization:
+  vertex:
+    minimum: [-1690.0, -1690.0, -1810.0]
+    maximum: [1690.0, 1690.0, 1810.0]
+
+  direction:
+    minimum: [-1.0, -1.0, -1.0]
+    maximum: [1.0, 1.0, 1.0]
+
+  energy:
+    minimum: 0.5
+    maximum: 2000.0
