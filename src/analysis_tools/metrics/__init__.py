@@ -17,6 +17,12 @@ from analysis_tools.metrics.energy import (
     energy_residuals,
     fractional_energy_residuals,
 )
+from analysis_tools.metrics.statistics import (
+    bias_magnitude,
+    bias_vector,
+    median,
+    quantile,
+)
 from analysis_tools.metrics.vertex import (
     vertex_errors,
     vertex_residuals,
@@ -34,6 +40,10 @@ __all__ = [
     "direction_errors",
     "energy_residuals",
     "fractional_energy_residuals",
+    "bias_magnitude",
+    "bias_vector",
+    "median",
+    "quantile",
     "vertex_errors",
     "vertex_residuals",
 ]
