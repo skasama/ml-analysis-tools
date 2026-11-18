@@ -12,6 +12,12 @@ from analysis_tools.plotting.energy import (
     plot_energy_residuals,
     plot_energy_resolution,
 )
+from analysis_tools.plotting.event_display import (
+    add_cylindrical_detector_3d,
+    plot_event_2d,
+    plot_event_3d,
+    plot_unrolled_cylindrical_event,
+)
 from analysis_tools.plotting.loss import plot_loss
 from analysis_tools.plotting.output import save_figure
 from analysis_tools.plotting.vertex import (
@@ -39,4 +45,8 @@ __all__ = [
     "plot_vertex_resolution",
     "plot_vertex_profiles",
     "plot_vertex_error_summary",
+    "plot_event_2d",
+    "plot_event_3d",
+    "add_cylindrical_detector_3d",
+    "plot_unrolled_cylindrical_event",
 ]
