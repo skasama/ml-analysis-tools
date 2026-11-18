@@ -65,9 +65,7 @@ LABELS_KEY = "labels"
 # ============================================================
 
 # Set to None to plot ML results only.
-FITQUN_PATH: Path | None = Path(
-    "path/to/common_multi_fitqun.hy"
-)
+FITQUN_PATH: Path | None = Path("path/to/common_multi_fitqun.hy")
 
 # FITQUN_PATH: Path | None = None
 
@@ -164,29 +162,15 @@ ENERGY_EDGES = make_bin_edges(
 # Output
 # ============================================================
 
-OUTPUT_DIRECTORY = Path(
-    "outputs/classification_dependencies"
-)
+OUTPUT_DIRECTORY = Path("outputs/classification_dependencies")
 
-ML_ONLY_EFFICIENCY_FILENAME = (
-    "classification_efficiency_dependencies.png"
-)
-ML_ONLY_PURITY_FILENAME = (
-    "classification_purity_dependencies.png"
-)
-ML_ONLY_CSV_FILENAME = (
-    "classification_dependencies.csv"
-)
+ML_ONLY_EFFICIENCY_FILENAME = "classification_efficiency_dependencies.png"
+ML_ONLY_PURITY_FILENAME = "classification_purity_dependencies.png"
+ML_ONLY_CSV_FILENAME = "classification_dependencies.csv"
 
-COMPARISON_EFFICIENCY_FILENAME = (
-    "classification_efficiency_ml_vs_fitqun.png"
-)
-COMPARISON_PURITY_FILENAME = (
-    "classification_purity_ml_vs_fitqun.png"
-)
-COMPARISON_CSV_FILENAME = (
-    "classification_dependencies_ml_vs_fitqun.csv"
-)
+COMPARISON_EFFICIENCY_FILENAME = "classification_efficiency_ml_vs_fitqun.png"
+COMPARISON_PURITY_FILENAME = "classification_purity_ml_vs_fitqun.png"
+COMPARISON_CSV_FILENAME = "classification_dependencies_ml_vs_fitqun.csv"
 
 
 # ============================================================
@@ -251,27 +235,18 @@ def remove_nonfinite_events(
         if array.ndim == 1:
             valid_mask &= np.isfinite(array)
         else:
-            axes = tuple(
-                range(1, array.ndim)
-            )
+            axes = tuple(range(1, array.ndim))
             valid_mask &= np.all(
                 np.isfinite(array),
                 axis=axes,
             )
 
-    removed_count = int(
-        np.count_nonzero(~valid_mask)
-    )
+    removed_count = int(np.count_nonzero(~valid_mask))
 
-    selected = tuple(
-        np.asarray(array)[valid_mask]
-        for array in arrays
-    )
+    selected = tuple(np.asarray(array)[valid_mask] for array in arrays)
 
     if len(selected[0]) == 0:
-        raise ValueError(
-            "No finite events remain after filtering."
-        )
+        raise ValueError("No finite events remain after filtering.")
 
     return selected, removed_count
 
@@ -288,8 +263,7 @@ def select_classes(
 
     if not np.any(selected):
         raise ValueError(
-            f"{data.name} has no events for classes "
-            f"{class_labels.tolist()}."
+            f"{data.name} has no events for classes {class_labels.tolist()}."
         )
 
     return ClassificationDependencyData(
@@ -313,17 +287,13 @@ def create_ml_probabilities(
         return softmax(scores)
 
     if np.any(scores < 0.0):
-        raise ValueError(
-            "ML probabilities must be non-negative."
-        )
+        raise ValueError("ML probabilities must be non-negative.")
 
     if not np.allclose(
         np.sum(scores, axis=1),
         1.0,
     ):
-        raise ValueError(
-            "ML probability rows must sum to one."
-        )
+        raise ValueError("ML probability rows must sum to one.")
 
     return scores
 
@@ -396,9 +366,7 @@ def load_ml_data() -> ClassificationDependencyData:
     )
 
     if scores.ndim != 2:
-        raise ValueError(
-            f"scores must have shape (N, C), got {scores.shape}."
-        )
+        raise ValueError(f"scores must have shape (N, C), got {scores.shape}.")
 
     if scores.shape[1] != len(CLASS_LABELS):
         raise ValueError(
@@ -411,9 +379,7 @@ def load_ml_data() -> ClassificationDependencyData:
         targets,
         truth_labels,
     ):
-        mismatch = np.flatnonzero(
-            targets != truth_labels
-        )
+        mismatch = np.flatnonzero(targets != truth_labels)
         first = int(mismatch[0])
 
         raise ValueError(
@@ -453,16 +419,10 @@ def load_ml_data() -> ClassificationDependencyData:
             f"CLASS_LABELS: {unknown_labels.tolist()}."
         )
 
-    probabilities = create_ml_probabilities(
-        scores
-    )
+    probabilities = create_ml_probabilities(scores)
 
-    prediction_indices = predicted_labels(
-        probabilities
-    )
-    predictions = CLASS_LABELS[
-        prediction_indices
-    ]
+    prediction_indices = predicted_labels(probabilities)
+    predictions = CLASS_LABELS[prediction_indices]
 
     wall = compute_wall(
         positions,
@@ -477,10 +437,7 @@ def load_ml_data() -> ClassificationDependencyData:
         half_height=DETECTOR_HALF_HEIGHT_CM,
     )
 
-    print(
-        "ML non-finite events removed: "
-        f"{removed_count:,}"
-    )
+    print(f"ML non-finite events removed: {removed_count:,}")
 
     return ClassificationDependencyData(
         name="ML",
@@ -527,11 +484,7 @@ def load_fitqun_data(
         energies,
     ) = arrays
 
-    score = (
-        muon_nll
-        - electron_nll
-        - 0.2 * electron_momentum
-    )
+    score = muon_nll - electron_nll - 0.2 * electron_momentum
 
     predictions = np.where(
         score > FITQUN_SCORE_THRESHOLD,
@@ -552,10 +505,7 @@ def load_fitqun_data(
         half_height=DETECTOR_HALF_HEIGHT_CM,
     )
 
-    print(
-        "fiTQun non-finite events removed: "
-        f"{removed_count:,}"
-    )
+    print(f"fiTQun non-finite events removed: {removed_count:,}")
 
     return ClassificationDependencyData(
         name="fiTQun",
@@ -613,27 +563,21 @@ def plot_metric_dependencies(
         "efficiency",
         "purity",
     }:
-        raise ValueError(
-            "metric must be 'efficiency' or 'purity'."
-        )
+        raise ValueError("metric must be 'efficiency' or 'purity'.")
 
     figure, axes = plt.subplots(
         len(class_labels),
         len(dependencies),
         figsize=(
-            FIGURE_WIDTH_PER_COLUMN
-            * len(dependencies),
-            FIGURE_HEIGHT_PER_ROW
-            * len(class_labels),
+            FIGURE_WIDTH_PER_COLUMN * len(dependencies),
+            FIGURE_HEIGHT_PER_ROW * len(class_labels),
         ),
         squeeze=False,
     )
 
     csv_rows: list[list[object]] = []
 
-    for row, class_label in enumerate(
-        class_labels
-    ):
+    for row, class_label in enumerate(class_labels):
         label = int(class_label)
         class_name = CLASS_NAMES.get(
             label,
@@ -661,11 +605,7 @@ def plot_metric_dependencies(
                     class_label=label,
                 )
 
-                values = (
-                    efficiency
-                    if metric == "efficiency"
-                    else purity
-                )
+                values = efficiency if metric == "efficiency" else purity
 
                 valid = np.isfinite(values)
 
@@ -700,30 +640,18 @@ def plot_metric_dependencies(
                     )
 
             axis.set_xlabel(xlabel)
-            axis.set_ylabel(
-                metric.capitalize()
-            )
+            axis.set_ylabel(metric.capitalize())
             axis.set_ylim(0.0, 1.05)
-            axis.set_title(
-                f"{class_name} {metric} "
-                f"vs {dependency_title}"
-            )
+            axis.set_title(f"{class_name} {metric} vs {dependency_title}")
             axis.grid(alpha=0.3)
             axis.legend()
 
     comparison_enabled = len(methods) > 1
 
-    title_suffix = (
-        "ML vs fiTQun"
-        if comparison_enabled
-        else "ML"
-    )
+    title_suffix = "ML vs fiTQun" if comparison_enabled else "ML"
 
     figure.suptitle(
-        (
-            f"Classification {metric} dependencies: "
-            f"{title_suffix}"
-        ),
+        (f"Classification {metric} dependencies: {title_suffix}"),
         fontsize=16,
     )
     figure.tight_layout()
@@ -762,9 +690,7 @@ def main() -> None:
     methods = [ml_data]
 
     if FITQUN_PATH is not None:
-        fitqun_data = load_fitqun_data(
-            FITQUN_PATH
-        )
+        fitqun_data = load_fitqun_data(FITQUN_PATH)
 
         # Compare only classes supported by fiTQun.
         class_labels = COMPARISON_CLASS_LABELS
@@ -783,10 +709,7 @@ def main() -> None:
         class_labels = CLASS_LABELS
 
     for method in methods:
-        print(
-            f"{method.name} events: "
-            f"{method.event_count:,}"
-        )
+        print(f"{method.name} events: {method.event_count:,}")
 
         unique_labels, counts = np.unique(
             method.targets,
@@ -802,9 +725,7 @@ def main() -> None:
                 int(label),
                 str(label),
             )
-            print(
-                f"  {class_name}: {count:,}"
-            )
+            print(f"  {class_name}: {count:,}")
 
     dependencies = (
         (
@@ -857,28 +778,15 @@ def main() -> None:
         else ML_ONLY_EFFICIENCY_FILENAME
     )
     purity_filename = (
-        COMPARISON_PURITY_FILENAME
-        if comparison_enabled
-        else ML_ONLY_PURITY_FILENAME
+        COMPARISON_PURITY_FILENAME if comparison_enabled else ML_ONLY_PURITY_FILENAME
     )
     csv_filename = (
-        COMPARISON_CSV_FILENAME
-        if comparison_enabled
-        else ML_ONLY_CSV_FILENAME
+        COMPARISON_CSV_FILENAME if comparison_enabled else ML_ONLY_CSV_FILENAME
     )
 
-    efficiency_path = (
-        OUTPUT_DIRECTORY
-        / efficiency_filename
-    )
-    purity_path = (
-        OUTPUT_DIRECTORY
-        / purity_filename
-    )
-    csv_path = (
-        OUTPUT_DIRECTORY
-        / csv_filename
-    )
+    efficiency_path = OUTPUT_DIRECTORY / efficiency_filename
+    purity_path = OUTPUT_DIRECTORY / purity_filename
+    csv_path = OUTPUT_DIRECTORY / csv_filename
 
     save_figure(
         efficiency_figure,

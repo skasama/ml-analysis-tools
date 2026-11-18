@@ -42,26 +42,14 @@ from analysis_tools.transforms.geometry import (
 # Input files
 # ============================================================
 
-VERTEX_PREDICTIONS_PATH = Path(
-    "path/to/vertex/outputs/preds.npy"
-)
-VERTEX_TARGETS_PATH = Path(
-    "path/to/vertex/outputs/targets.npy"
-)
+VERTEX_PREDICTIONS_PATH = Path("path/to/vertex/outputs/preds.npy")
+VERTEX_TARGETS_PATH = Path("path/to/vertex/outputs/targets.npy")
 
-DIRECTION_PREDICTIONS_PATH = Path(
-    "path/to/direction/outputs/preds.npy"
-)
-DIRECTION_TARGETS_PATH = Path(
-    "path/to/direction/outputs/targets.npy"
-)
+DIRECTION_PREDICTIONS_PATH = Path("path/to/direction/outputs/preds.npy")
+DIRECTION_TARGETS_PATH = Path("path/to/direction/outputs/targets.npy")
 
-ENERGY_PREDICTIONS_PATH = Path(
-    "path/to/energy/outputs/preds.npy"
-)
-ENERGY_TARGETS_PATH = Path(
-    "path/to/energy/outputs/targets.npy"
-)
+ENERGY_PREDICTIONS_PATH = Path("path/to/energy/outputs/preds.npy")
+ENERGY_TARGETS_PATH = Path("path/to/energy/outputs/targets.npy")
 
 
 # ============================================================

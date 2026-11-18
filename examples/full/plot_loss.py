@@ -76,9 +76,7 @@ def main() -> None:
     )
 
     if positive_losses.size == 0:
-        raise ValueError(
-            "No positive loss values were found."
-        )
+        raise ValueError("No positive loss values were found.")
 
     epsilon = max(
         float(positive_losses.min()) * 0.1,
@@ -192,20 +190,12 @@ def main() -> None:
     zoom_axis.grid(alpha=0.3)
     zoom_axis.legend()
 
-    best_index = int(
-        np.argmin(validation_loss)
-    )
+    best_index = int(np.argmin(validation_loss))
 
     print("\n========== Loss summary ==========")
     print(f"Run: {RUN_DIRECTORY}")
-    print(
-        "Best validation loss: "
-        f"{validation_loss[best_index]:.6g}"
-    )
-    print(
-        "Best epoch: "
-        f"{validation_epoch[best_index]:.3f}"
-    )
+    print(f"Best validation loss: {validation_loss[best_index]:.6g}")
+    print(f"Best epoch: {validation_epoch[best_index]:.3f}")
     print("==================================\n")
 
     figure.suptitle(

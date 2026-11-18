@@ -28,12 +28,8 @@ from analysis_tools.transforms import MinMaxTransform
 # Input and output
 # ============================================================
 
-PREDICTIONS_PATH = Path(
-    "path/to/outputs/preds.npy"
-)
-TARGETS_PATH = Path(
-    "path/to/outputs/targets.npy"
-)
+PREDICTIONS_PATH = Path("path/to/outputs/preds.npy")
+TARGETS_PATH = Path("path/to/outputs/targets.npy")
 
 OUTPUT_DIRECTORY = Path("outputs/vertex")
 
