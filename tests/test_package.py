@@ -13,6 +13,8 @@ import pytest
         "analysis_tools.metrics",
         "analysis_tools.plotting",
         "analysis_tools.analysis",
+        "analysis_tools.physics",
+        "analysis_tools.splitting",
     ],
 )
 def test_module_can_be_imported(module_name: str) -> None:
