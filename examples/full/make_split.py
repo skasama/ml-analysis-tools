@@ -120,10 +120,10 @@ VALIDATION_FRACTION = 0.1
 # ============================================================
 
 # "angles" or "vectors"
-DIRECTION_SOURCE = "angles"
+DIRECTION_SOURCE = "vectors"
 
-ANGLES_KEY = "angles"
 DIRECTIONS_KEY = "directions"
+ANGLES_KEY = "angles"
 
 # Cylinder axis and zenith axis:
 #   0: x-axis
@@ -195,12 +195,12 @@ def required_keys() -> list[str]:
         keys.append(POSITIONS_KEY)
 
     if MINIMUM_TOWALL_CM is not None or MAXIMUM_TOWALL_CM is not None:
-        if DIRECTION_SOURCE == "angles":
-            keys.append(ANGLES_KEY)
-        elif DIRECTION_SOURCE == "vectors":
+        if DIRECTION_SOURCE == "vectors":
             keys.append(DIRECTIONS_KEY)
+        elif DIRECTION_SOURCE == "angles":
+            keys.append(ANGLES_KEY)
         else:
-            raise ValueError("DIRECTION_SOURCE must be 'angles' or 'vectors'.")
+            raise ValueError("DIRECTION_SOURCE must be 'vectors' or 'angles'.")
 
     return list(dict.fromkeys(keys))
 
@@ -466,17 +466,18 @@ def main() -> None:
             name=POSITIONS_KEY,
         ).astype(float)
 
-    if DIRECTION_SOURCE == "angles" and ANGLES_KEY in arrays:
-        directions = direction_from_angles(
-            arrays[ANGLES_KEY],
-            axis=ZENITH_AXIS,
-        )
-    elif DIRECTION_SOURCE == "vectors" and DIRECTIONS_KEY in arrays:
+    if DIRECTION_SOURCE == "vectors" and DIRECTIONS_KEY in arrays:
         directions = as_vector_array(
             arrays[DIRECTIONS_KEY],
             size=3,
             name=DIRECTIONS_KEY,
         ).astype(float)
+
+    elif DIRECTION_SOURCE == "angles" and ANGLES_KEY in arrays:
+        directions = direction_from_angles(
+            arrays[ANGLES_KEY],
+            axis=ZENITH_AXIS,
+        )
 
     # 4. Valid-data cut
     valid_arrays: list[np.ndarray] = []
