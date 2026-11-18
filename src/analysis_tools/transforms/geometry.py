@@ -24,6 +24,8 @@ def normalize_vectors(
 
 def cylindrical_radius(
     positions: ArrayLike,
+    *,
+    axis: int = 2,
 ) -> NDArray[np.float64]:
     """
 
@@ -33,19 +35,29 @@ def cylindrical_radius(
     ----------
     positions: ArrayLike
         An array of shape (N, 3) representing N points in 3D space.
+    axis: int
+        The axis along which the cylinder is oriented (0, 1, or 2).
 
     Returns
     -------
     NDArray[np.float64]
         An array of shape (N,) representing the cylindrical radii of the points.
     """
+    _validate_axis(axis)
+
     positions = as_vector_array(
         positions,
         size=3,
         name="positions",
     ).astype(float)
 
-    return np.linalg.norm(positions[:, :2], axis=1)
+    transverse = np.delete(
+        positions,
+        axis,
+        axis=1,
+    )
+
+    return np.linalg.norm(transverse, axis=1)
 
 
 def compute_wall(
@@ -53,6 +65,7 @@ def compute_wall(
     *,
     radius: float,
     half_height: float,
+    axis: int = 2,
 ) -> NDArray[np.float64]:
     """
 
@@ -70,6 +83,8 @@ def compute_wall(
     half_height: float
         Half the height of the cylinder (the cylinder extends from -half_height
         to +half_height along the z-axis)
+    axis: int
+        The axis along which the cylinder is oriented (0, 1, or 2).
 
     Returns
     -------
@@ -79,6 +94,7 @@ def compute_wall(
         the cylinder, while negative values indicate points outside the cylinder.
     """
     _validate_cylinder(radius, half_height)
+    _validate_axis(axis)
 
     positions = as_vector_array(
         positions,
@@ -86,10 +102,15 @@ def compute_wall(
         name="positions",
     ).astype(float)
 
-    radial_distances = radius - cylindrical_radius(positions)
-    vertical_distances = half_height - np.abs(positions[:, 2])
+    radial_distance = radius - cylindrical_radius(
+        positions,
+        axis=axis,
+    )
 
-    return np.minimum(radial_distances, vertical_distances)
+    axial_position = positions[:, axis]
+    axial_distance = half_height - np.abs(axial_position)
+
+    return np.minimum(radial_distance, axial_distance)
 
 
 def compute_towall(
@@ -98,13 +119,36 @@ def compute_towall(
     *,
     radius: float,
     half_height: float,
+    axis: int = 2,
 ) -> NDArray[np.float64]:
     """Calculate the distance to the wall along a direction.
 
     Positive values are inside the cylinder,
     Negative values are outside the cylinder.
+
+    Parameters
+    ----------
+    positions: ArrayLike
+        An array of shape (N, 3) representing N points in 3D space
+    directions: ArrayLike
+        An array of shape (N, 3) representing N direction vectors in 3D space
+    radius: float
+        The radius of the cylinder
+    half_height: float
+        Half the height of the cylinder (the cylinder extends from -half_height
+        to +half_height along the z-axis)
+    axis: int
+        The axis along which the cylinder is oriented (0, 1, or 2).
+
+    Returns
+    -------
+    NDArray[np.float64]
+        An array of shape (N,) representing the distance to the cylinder wall
+        along the given direction for each point. Positive values indicate points
+        inside the cylinder, while negative values indicate points outside the cylinder.
     """
     _validate_cylinder(radius, half_height)
+    _validate_axis(axis)
 
     positions = as_vector_array(
         positions,
@@ -116,13 +160,29 @@ def compute_towall(
     if len(positions) != len(directions):
         raise ValueError("positions and directions must have the same length.")
 
-    x = positions[:, 0]
-    y = positions[:, 1]
-    z = positions[:, 2]
+    wall = compute_wall(
+        positions,
+        radius=radius,
+        half_height=half_height,
+        axis=axis,
+    )
 
-    dx = directions[:, 0]
-    dy = directions[:, 1]
-    dz = directions[:, 2]
+    if np.any(wall < 0.0):
+        raise ValueError("ToWall is undefined for positions outside the cylinder.")
+
+    transverse_positions = np.delete(
+        positions,
+        axis,
+        axis=1,
+    )
+    transverse_directions = np.delete(
+        directions,
+        axis,
+        axis=1,
+    )
+
+    axial_positions = positions[:, axis]
+    axial_directions = directions[:, axis]
 
     # Compute the distance from each point inside a finite cylinder to the first
     # cylinder boundary encountered along the direction vector (dx, dy, dz).
@@ -160,9 +220,21 @@ def compute_towall(
     #
     # A negative distance indicates that the starting position lies outside
     # the cylinder, in which case the result is undefined.
-    radial_a = dx**2 + dy**2
-    radial_b = 2.0 * (x * dx + y * dy)
-    radial_c = x**2 + y**2 - radius**2
+    radial_a = np.sum(
+        transverse_directions**2,
+        axis=1,
+    )
+    radial_b = 2.0 * np.sum(
+        transverse_positions * transverse_directions,
+        axis=1,
+    )
+    radial_c = (
+        np.sum(
+            transverse_positions**2,
+            axis=1,
+        )
+        - radius**2
+    )
 
     discriminant = radial_b**2 - 4.0 * radial_a * radial_c
 
@@ -173,16 +245,27 @@ def compute_towall(
         -radial_b[valid_radial] + np.sqrt(discriminant[valid_radial])
     ) / (2.0 * radial_a[valid_radial])
 
-    vertical_distance = np.full(len(positions), np.inf)
+    axial_distance = np.full(
+        len(positions),
+        np.inf,
+        dtype=float,
+    )
 
-    positive_z = dz > 0.0
-    negative_z = dz < 0.0
+    positive_axial = axial_directions > 0.0
+    negative_axial = axial_directions < 0.0
 
-    vertical_distance[positive_z] = (half_height - z[positive_z]) / dz[positive_z]
+    axial_distance[positive_axial] = (
+        half_height - axial_positions[positive_axial]
+    ) / axial_directions[positive_axial]
 
-    vertical_distance[negative_z] = (-half_height - z[negative_z]) / dz[negative_z]
+    axial_distance[negative_axial] = (
+        -half_height - axial_positions[negative_axial]
+    ) / axial_directions[negative_axial]
 
-    distances = np.minimum(radial_distance, vertical_distance)
+    distances = np.minimum(radial_distance, axial_distance)
+
+    if np.any(~np.isfinite(distances)):
+        raise ValueError("Could not determine a finite ToWall distance.")
 
     if np.any(distances < 0.0):
         raise ValueError("ToWall is undefined for positions outside the cylinder.")
@@ -199,3 +282,16 @@ def _validate_cylinder(
 
     if half_height <= 0.0:
         raise ValueError("half_height must be positive.")
+
+
+def _validate_axis(axis: int) -> None:
+    if axis not in {0, 1, 2}:
+        raise ValueError("axis must be 0, 1, or 2.")
+
+
+def _validate_cylinder(
+    radius: float,
+    half_height: float,
+) -> None:
+    if radius <= 0.0:
+        raise ValueError("radius must be positive.")

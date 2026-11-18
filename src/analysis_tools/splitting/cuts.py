@@ -275,6 +275,7 @@ def wall_cut(
     *,
     detector_radius: float,
     detector_half_height: float,
+    axis: int = 2,
     minimum: float | None = None,
     maximum: float | None = None,
 ) -> NDArray[np.bool_]:
@@ -294,7 +295,8 @@ def wall_cut(
         Minimum distance to the wall (inclusive). If None, no minimum is applied.
     maximum : float | None, optional
         Maximum distance to the wall (inclusive). If None, no maximum is applied.
-
+    axis : int, optional
+        The axis along which to measure the distance to the wall. Default is 2 (z-axis).
 
     Returns
     -------
@@ -311,6 +313,7 @@ def wall_cut(
         positions,
         radius=detector_radius,
         half_height=detector_half_height,
+        axis=axis,
     )
 
     return range_cut(
@@ -327,6 +330,7 @@ def towall_cut(
     *,
     detector_radius: float,
     detector_half_height: float,
+    axis: int = 2,
     minimum: float | None = None,
     maximum: float | None = None,
 ) -> NDArray[np.bool_]:
@@ -376,6 +380,7 @@ def towall_cut(
         directions,
         radius=detector_radius,
         half_height=detector_half_height,
+        axis=axis,
     )
 
     return range_cut(

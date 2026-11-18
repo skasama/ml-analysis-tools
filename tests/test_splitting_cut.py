@@ -182,3 +182,43 @@ def test_combine_cuts_rejects_length_mismatch() -> None:
             [True, False],
             [True],
         )
+
+
+def test_wall_cut_with_y_axis() -> None:
+    mask = wall_cut(
+        positions=[
+            [0.0, 0.0, 0.0],
+            [0.0, 19.0, 0.0],
+        ],
+        detector_radius=10.0,
+        detector_half_height=20.0,
+        axis=1,
+        minimum=5.0,
+    )
+
+    np.testing.assert_array_equal(
+        mask,
+        [True, False],
+    )
+
+
+def test_towall_cut_with_y_axis() -> None:
+    mask = towall_cut(
+        positions=[
+            [0.0, 5.0, 0.0],
+            [0.0, 19.0, 0.0],
+        ],
+        directions=[
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+        ],
+        detector_radius=10.0,
+        detector_half_height=20.0,
+        axis=1,
+        minimum=5.0,
+    )
+
+    np.testing.assert_array_equal(
+        mask,
+        [True, False],
+    )

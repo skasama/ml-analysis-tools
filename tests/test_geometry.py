@@ -83,17 +83,6 @@ def test_compute_wall_is_negative_outside() -> None:
     np.testing.assert_allclose(actual, [-1.0])
 
 
-def test_compute_towall_radial_direction() -> None:
-    actual = compute_towall(
-        positions=[[0.0, 0.0, 0.0]],
-        directions=[[1.0, 0.0, 0.0]],
-        radius=10.0,
-        half_height=20.0,
-    )
-
-    np.testing.assert_allclose(actual, [10.0])
-
-
 def test_compute_towall_vertical_direction() -> None:
     actual = compute_towall(
         positions=[[0.0, 0.0, 5.0]],
@@ -126,4 +115,109 @@ def test_compute_towall_rejects_length_mismatch() -> None:
             ],
             radius=10.0,
             half_height=20.0,
+        )
+
+
+@pytest.mark.parametrize("axis", [0, 1, 2])
+def test_cylindrical_radius_for_each_axis(
+    axis: int,
+) -> None:
+    position = np.zeros((1, 3))
+    transverse_axes = [index for index in range(3) if index != axis]
+
+    position[0, transverse_axes[0]] = 3.0
+    position[0, transverse_axes[1]] = 4.0
+    position[0, axis] = 10.0
+
+    actual = cylindrical_radius(
+        position,
+        axis=axis,
+    )
+
+    np.testing.assert_allclose(actual, [5.0])
+
+
+@pytest.mark.parametrize("axis", [0, 1, 2])
+def test_compute_wall_for_each_axis(
+    axis: int,
+) -> None:
+    position = np.zeros((1, 3))
+    position[0, axis] = 18.0
+
+    actual = compute_wall(
+        position,
+        radius=10.0,
+        half_height=20.0,
+        axis=axis,
+    )
+
+    np.testing.assert_allclose(actual, [2.0])
+
+
+@pytest.mark.parametrize("axis", [0, 1, 2])
+def test_compute_towall_axial_direction(
+    axis: int,
+) -> None:
+    position = np.zeros((1, 3))
+    position[0, axis] = 5.0
+
+    direction = np.zeros((1, 3))
+    direction[0, axis] = 1.0
+
+    actual = compute_towall(
+        position,
+        direction,
+        radius=10.0,
+        half_height=20.0,
+        axis=axis,
+    )
+
+    np.testing.assert_allclose(actual, [15.0])
+
+
+@pytest.mark.parametrize("axis", [0, 1, 2])
+def test_compute_towall_radial_direction(
+    axis: int,
+) -> None:
+    transverse_axis = next(index for index in range(3) if index != axis)
+
+    position = np.zeros((1, 3))
+    direction = np.zeros((1, 3))
+    direction[0, transverse_axis] = 1.0
+
+    actual = compute_towall(
+        position,
+        direction,
+        radius=10.0,
+        half_height=20.0,
+        axis=axis,
+    )
+
+    np.testing.assert_allclose(actual, [10.0])
+
+
+def test_geometry_rejects_invalid_axis() -> None:
+    with pytest.raises(
+        ValueError,
+        match="0, 1, or 2",
+    ):
+        compute_wall(
+            [[0.0, 0.0, 0.0]],
+            radius=10.0,
+            half_height=20.0,
+            axis=3,
+        )
+
+
+def test_compute_towall_rejects_outside_position() -> None:
+    with pytest.raises(
+        ValueError,
+        match="outside",
+    ):
+        compute_towall(
+            positions=[[11.0, 0.0, 0.0]],
+            directions=[[1.0, 0.0, 0.0]],
+            radius=10.0,
+            half_height=20.0,
+            axis=2,
         )
