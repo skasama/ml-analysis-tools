@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pytest
 
 from analysis_tools.plotting.energy import (
     plot_energy_bias,
@@ -103,5 +104,21 @@ def test_plot_energy_resolution() -> None:
 
     assert axis.get_xlabel() == "True energy [MeV]"
     assert axis.get_ylabel() == "Energy resolution"
+
+    plt.close(figure)
+
+
+def test_plot_energy_resolution_forwards_series_kwargs() -> None:
+    figure, axis = plot_energy_resolution(
+        [100.0, 200.0, 300.0],
+        [0.20, 0.15, 0.10],
+        zorder=9,
+        drawstyle="steps-mid",
+    )
+
+    line = axis.lines[0]
+
+    assert line.get_zorder() == pytest.approx(9.1)
+    assert line.get_drawstyle() == "steps-mid"
 
     plt.close(figure)

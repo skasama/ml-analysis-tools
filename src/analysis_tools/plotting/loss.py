@@ -1,3 +1,5 @@
+from typing import Any
+
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import ArrayLike
@@ -25,6 +27,7 @@ def plot_loss(
     markersize: float = 4.0,
     alpha: float | None = None,
     figsize: tuple[float, float] = (6.4, 4.8),
+    **series_kwargs: Any,
 ) -> tuple[Figure, Axes]:
     """
 
@@ -71,6 +74,8 @@ def plot_loss(
         will be used.
     figsize : tuple of float, optional
         The size of the figure to create if ax is None. Default is (6.4, 4.8).
+    **series_kwargs : Any
+        Additional keyword arguments to pass to `Axes.plot()`.
 
     Returns
     -------
@@ -96,6 +101,7 @@ def plot_loss(
         markersize=markersize,
         alpha=alpha,
         figsize=figsize,
+        **series_kwargs,
     )
 
     if xscale is not None:

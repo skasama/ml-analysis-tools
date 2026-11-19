@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,7 +9,7 @@ from numpy.typing import ArrayLike, NDArray
 
 from analysis_tools.analysis.vertex_regression import VertexRegressionResult
 from analysis_tools.metrics.statistics import binned_absolute_quantile, binned_bias
-from analysis_tools.plotting.common import plot_histogram, plot_series
+from analysis_tools.plotting.common import plot_histogram, plot_scatter, plot_series
 
 
 def plot_vertex_errors(
@@ -28,6 +29,7 @@ def plot_vertex_errors(
     alpha: float | None = None,
     density: bool = False,
     figsize: tuple[float, float] = (6.4, 4.8),
+    **hist_kwargs: Any,
 ) -> tuple[Figure, Axes]:
     """
 
@@ -67,6 +69,8 @@ def plot_vertex_errors(
         Default is False.
     figsize : tuple of float, optional
         The size of the figure to create if ax is None. Default is (6.4, 4.8).
+    **hist_kwargs : Any
+        Additional keyword arguments to pass to `Axes.hist()`.
 
     Returns
     -------
@@ -91,6 +95,7 @@ def plot_vertex_errors(
         alpha=alpha,
         density=density,
         figsize=figsize,
+        **hist_kwargs,
     )
 
 
@@ -114,6 +119,7 @@ def plot_vertex_resolution(
     capsize: float = 3.0,
     alpha: float | None = None,
     figsize: tuple[float, float] = (6.4, 4.8),
+    **series_kwargs: Any,
 ) -> tuple[Figure, Axes]:
     """
 
@@ -158,6 +164,8 @@ def plot_vertex_resolution(
         the default alpha will be used.
     figsize : tuple of float, optional
         The size of the figure to create if ax is None. Default is (6.4, 4.8).
+    **series_kwargs : Any
+        Additional keyword arguments to pass to `Axes.errorbar()`.
 
     Returns
     -------
@@ -183,6 +191,7 @@ def plot_vertex_resolution(
         capsize=capsize,
         alpha=alpha,
         figsize=figsize,
+        **series_kwargs,
     )
 
 
@@ -191,6 +200,7 @@ def plot_vertex_error_summary(
     *,
     bins: int | Sequence[float] = 100,
     figsize: tuple[float, float] = (15.0, 9.0),
+    **hist_kwargs: Any,
 ) -> tuple[Figure, NDArray[np.object_]]:
     """Plot a summary of vertex residual and error distributions."""
     figure, axes = plt.subplots(
@@ -222,6 +232,7 @@ def plot_vertex_error_summary(
             color="tab:blue",
             histtype="step",
             linewidth=1.5,
+            **hist_kwargs,
         )
 
     figure.tight_layout()
@@ -236,6 +247,12 @@ def plot_vertex_prediction(
     color: str = "tab:blue",
     alpha: float = 0.3,
     marker_size: float = 5.0,
+    reference_color: str = "black",
+    reference_linestyle: str = "--",
+    reference_linewidth: float = 1.0,
+    equal_aspect: bool = True,
+    grid: bool = True,
+    **scatter_kwargs: Any,
 ) -> tuple[Figure, NDArray[np.object_]]:
     """
     Plot predicted vertex quantities against their targets.
@@ -252,6 +269,8 @@ def plot_vertex_prediction(
         The transparency level of the scatter points. Default is 0.3.
     marker_size : float, optional
         The size of the scatter points. Default is 5.0.
+    **scatter_kwargs : Any
+        Additional keyword arguments to pass to `Axes.scatter()`.
 
     Returns
     -------
@@ -270,63 +289,99 @@ def plot_vertex_prediction(
             result.predictions[:, 0],
             "True x [cm]",
             "Predicted x [cm]",
+            "x prediction",
         ),
         (
             result.targets[:, 1],
             result.predictions[:, 1],
             "True y [cm]",
             "Predicted y [cm]",
+            "y prediction",
         ),
         (
             result.targets[:, 2],
             result.predictions[:, 2],
             "True z [cm]",
             "Predicted z [cm]",
+            "z prediction",
         ),
         (
             result.target_radius,
             result.predicted_radius,
             "True R [cm]",
             "Predicted R [cm]",
+            "R prediction",
         ),
         (
             result.target_wall,
             result.predicted_wall,
             "True Wall [cm]",
             "Predicted Wall [cm]",
+            "Wall prediction",
         ),
     )
 
-    for axis, (targets, predictions, xlabel, ylabel) in zip(
+    for axis, (
+        targets,
+        predictions,
+        xlabel,
+        ylabel,
+        title,
+    ) in zip(
         axes,
         plot_data,
         strict=True,
     ):
-        axis.scatter(
+        plot_scatter(
             targets,
             predictions,
+            ax=axis,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            title=title,
             color=color,
             alpha=alpha,
-            s=marker_size,
+            marker_size=marker_size,
+            **scatter_kwargs,
         )
 
-        minimum = float(min(targets.min(), predictions.min()))
-        maximum = float(max(targets.max(), predictions.max()))
+        minimum = float(
+            min(
+                np.min(targets),
+                np.min(predictions),
+            )
+        )
+        maximum = float(
+            max(
+                np.max(targets),
+                np.max(predictions),
+            )
+        )
+
+        if maximum <= minimum:
+            padding = 1.0 if minimum == 0.0 else 0.05 * abs(minimum)
+            minimum -= padding
+            maximum += padding
 
         axis.plot(
             [minimum, maximum],
             [minimum, maximum],
-            color="black",
-            linestyle="--",
-            linewidth=1.0,
+            color=reference_color,
+            linestyle=reference_linestyle,
+            linewidth=reference_linewidth,
         )
 
-        axis.set_xlabel(xlabel)
-        axis.set_ylabel(ylabel)
         axis.set_xlim(minimum, maximum)
         axis.set_ylim(minimum, maximum)
-        axis.set_aspect("equal", adjustable="box")
-        axis.grid(alpha=0.2)
+
+        if equal_aspect:
+            axis.set_aspect(
+                "equal",
+                adjustable="box",
+            )
+
+        if grid:
+            axis.grid(alpha=0.2)
 
     figure.tight_layout()
 

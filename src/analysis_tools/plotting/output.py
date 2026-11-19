@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
@@ -12,6 +13,7 @@ def save_figure(
     transparent: bool = False,
     close: bool = False,
     create_parents: bool = True,
+    **kwargs: Any,
 ) -> Path:
     """
 
@@ -31,6 +33,8 @@ def save_figure(
         Whether to close the figure after saving. Default is False.
     create_parents : bool, optional
         Whether to create parent directories if they do not exist. Default is True.
+    **kwargs : Any
+        Additional keyword arguments to pass to `Figure.savefig()`.
 
     Returns
     -------
@@ -45,10 +49,7 @@ def save_figure(
         raise FileNotFoundError(path.parent)
 
     figure.savefig(
-        path,
-        dpi=dpi,
-        transparent=transparent,
-        bbox_inches="tight",
+        path, dpi=dpi, transparent=transparent, bbox_inches="tight", **kwargs
     )
 
     if close:

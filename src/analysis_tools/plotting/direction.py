@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import Any
 
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -24,6 +25,7 @@ def plot_direction_errors(
     alpha: float | None = None,
     density: bool = False,
     figsize: tuple[float, float] = (6.4, 4.8),
+    **hist_kwargs: Any,
 ) -> tuple[Figure, Axes]:
     """
 
@@ -64,6 +66,8 @@ def plot_direction_errors(
         Default is False.
     figsize : tuple of float, optional
         The size of the figure to create if ax is None. Default is (6.4, 4.8).
+    **hist_kwargs : Any
+        Additional keyword arguments to pass to `Axes.hist()`.
 
     Returns
     -------
@@ -111,6 +115,7 @@ def plot_direction_resolution(
     capsize: float = 3.0,
     alpha: float | None = None,
     figsize: tuple[float, float] = (6.4, 4.8),
+    **series_kwargs: Any,
 ) -> tuple[Figure, Axes]:
     """
 
@@ -155,6 +160,8 @@ def plot_direction_resolution(
         the default alpha will be used.
     figsize : tuple of float, optional
         The size of the figure to create if ax is None. Default is (6.4, 4.8).
+    **series_kwargs : Any
+        Additional keyword arguments to pass to `Axes.errorbar()`.
 
     Returns
     -------
@@ -180,4 +187,5 @@ def plot_direction_resolution(
         capsize=capsize,
         alpha=alpha,
         figsize=figsize,
+        **series_kwargs,
     )

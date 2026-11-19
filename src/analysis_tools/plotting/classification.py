@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -29,6 +30,7 @@ def plot_classification_efficiency(
     capsize: float = 3.0,
     alpha: float | None = None,
     figsize: tuple[float, float] = (6.4, 4.8),
+    **series_kwargs: Any,
 ) -> tuple[Figure, Axes]:
     """
 
@@ -73,6 +75,8 @@ def plot_classification_efficiency(
         the default alpha will be used.
     figsize : tuple of float, optional
         The size of the figure to create if ax is None. Default is (6.4, 4.8).
+    **series_kwargs : Any
+        Additional keyword arguments to pass to `Axes.errorbar()`.
 
     Returns
     -------
@@ -98,6 +102,7 @@ def plot_classification_efficiency(
         capsize=capsize,
         alpha=alpha,
         figsize=figsize,
+        **series_kwargs,
     )
 
 
@@ -121,6 +126,7 @@ def plot_classification_purity(
     capsize: float = 3.0,
     alpha: float | None = None,
     figsize: tuple[float, float] = (6.4, 4.8),
+    **series_kwargs: Any,
 ) -> tuple[Figure, Axes]:
     """
 
@@ -165,6 +171,8 @@ def plot_classification_purity(
         the default alpha will be used.
     figsize : tuple of float, optional
         The size of the figure to create if ax is None. Default is (6.4, 4.8).
+    **series_kwargs : Any
+        Additional keyword arguments to pass to `Axes.errorbar()`.
 
     Returns
     -------
@@ -190,6 +198,7 @@ def plot_classification_purity(
         capsize=capsize,
         alpha=alpha,
         figsize=figsize,
+        **series_kwargs,
     )
 
 
@@ -207,6 +216,7 @@ def plot_confusion_matrix(
     annotate: bool = True,
     value_format: str | None = None,
     figsize: tuple[float, float] = (6.4, 4.8),
+    **kwargs: Any,
 ) -> tuple[Figure, Axes]:
     """
 
@@ -242,6 +252,8 @@ def plot_confusion_matrix(
         a default format will be used.
     figsize : tuple of float, optional
         The size of the figure to create if ax is None. Default is (6.4, 4.8).
+    **kwargs : Any
+        Additional keyword arguments to pass to `imshow()` for the confusion matrix.
 
     Returns
     -------
@@ -273,7 +285,7 @@ def plot_confusion_matrix(
     else:
         figure = ax.figure
 
-    image = ax.imshow(plotted_matrix, cmap=cmap)
+    image = ax.imshow(plotted_matrix, cmap=cmap, **kwargs)
 
     positions = np.arange(len(class_labels))
     labels = [str(label) for label in class_labels]

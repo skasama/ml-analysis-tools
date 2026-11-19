@@ -22,7 +22,6 @@ from analysis_tools.io import (
     load_npz,
 )
 
-
 # ============================================================
 # Select examples to run
 # ============================================================
@@ -77,18 +76,13 @@ def print_array_summary(
     if np.issubdtype(array.dtype, np.number):
         finite = np.isfinite(array)
 
-        print(
-            "  Finite values: "
-            f"{np.count_nonzero(finite):,} / {array.size:,}"
-        )
+        print(f"  Finite values: {np.count_nonzero(finite):,} / {array.size:,}")
 
         if np.any(finite):
             finite_values = array[finite]
 
             print(
-                "  Range: "
-                f"{np.min(finite_values):.6g} to "
-                f"{np.max(finite_values):.6g}"
+                f"  Range: {np.min(finite_values):.6g} to {np.max(finite_values):.6g}"
             )
 
     preview_size = min(3, len(array))
@@ -142,9 +136,7 @@ def load_npz_example() -> None:
 
 def inspect_hdf5_example() -> None:
     """List all datasets stored in an HDF5 file."""
-    datasets = list_hdf5_datasets(
-        HDF5_PATH
-    )
+    datasets = list_hdf5_datasets(HDF5_PATH)
 
     print(f"\nHDF5 file: {HDF5_PATH}")
     print(f"Datasets: {len(datasets)}")

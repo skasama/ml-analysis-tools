@@ -110,3 +110,42 @@ def test_plot_confusion_matrix_rejects_wrong_label_count() -> None:
             np.eye(2),
             class_labels=[0],
         )
+
+
+def test_plot_confusion_matrix_forwards_kwargs() -> None:
+    figure, axis = plot_confusion_matrix(
+        [
+            [8, 2],
+            [1, 9],
+        ],
+        class_labels=["Electron", "Muon"],
+        colorbar=False,
+        interpolation="nearest",
+        aspect="equal",
+        zorder=4,
+    )
+
+    image = axis.images[0]
+
+    assert image.get_interpolation() == "nearest"
+    assert image.get_zorder() == 4
+
+    assert axis.get_aspect() == 1.0
+
+    plt.close(figure)
+
+
+def test_plot_classification_efficiency_forwards_series_kwargs() -> None:
+    figure, axis = plot_classification_efficiency(
+        [100.0, 200.0],
+        [0.8, 0.9],
+        zorder=11,
+        drawstyle="steps-mid",
+    )
+
+    line = axis.lines[0]
+
+    assert line.get_zorder() == pytest.approx(11.1)
+    assert line.get_drawstyle() == "steps-mid"
+
+    plt.close(figure)

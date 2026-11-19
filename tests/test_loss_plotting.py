@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pytest
 
 from analysis_tools.plotting.loss import plot_loss
 
@@ -84,5 +85,21 @@ def test_plot_loss_applies_axis_settings() -> None:
     assert axis.get_ylabel() == "Cross-entropy loss"
     np.testing.assert_allclose(axis.get_xlim(), [0.0, 250.0])
     np.testing.assert_allclose(axis.get_ylim(), [0.0, 1.5])
+
+    plt.close(figure)
+
+
+def test_plot_loss_forwards_series_kwargs() -> None:
+    figure, axis = plot_loss(
+        [0.0, 1.0, 2.0],
+        [1.0, 0.5, 0.25],
+        zorder=6,
+        drawstyle="steps-post",
+    )
+
+    line = axis.lines[0]
+
+    assert line.get_zorder() == pytest.approx(6.1)
+    assert line.get_drawstyle() == "steps-post"
 
     plt.close(figure)

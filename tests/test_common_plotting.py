@@ -1,7 +1,10 @@
+from unittest.mock import patch
+
 import matplotlib.pyplot as plt
+import numpy as np
 import pytest
 
-from analysis_tools.plotting.common import plot_histogram, plot_series
+from analysis_tools.plotting.common import plot_histogram, plot_scatter, plot_series
 
 
 def test_plot_histogram_creates_figure_and_axes() -> None:
@@ -109,3 +112,88 @@ def test_plot_series_rejects_length_mismatch() -> None:
             [1.0, 2.0],
             [3.0],
         )
+
+
+def test_plot_scatter_forwards_kwargs() -> None:
+    figure, axis = plot_scatter(
+        [1.0, 2.0],
+        [3.0, 4.0],
+        edgecolors="black",
+        linewidths=0.5,
+        rasterized=True,
+    )
+
+    collection = axis.collections[0]
+
+    assert collection.get_rasterized()
+    np.testing.assert_allclose(
+        collection.get_linewidths(),
+        [0.5],
+    )
+
+    plt.close(figure)
+
+
+def test_plot_series_forwards_series_kwargs() -> None:
+    figure, axis = plot_series(
+        [1.0, 2.0, 3.0],
+        [3.0, 2.0, 1.0],
+        zorder=8,
+        dash_capstyle="round",
+    )
+
+    line = axis.lines[0]
+
+    assert line.get_zorder() == pytest.approx(8.1)
+    assert line.get_dash_capstyle() == "round"
+
+    plt.close(figure)
+
+
+def test_plot_histogram_forwards_hist_kwargs() -> None:
+    figure, axis = plt.subplots()
+
+    with patch.object(
+        axis,
+        "hist",
+        wraps=axis.hist,
+    ) as hist:
+        plot_histogram(
+            [1.0, 2.0, 3.0],
+            ax=axis,
+            bins=[0.0, 2.0, 4.0],
+            hatch="//",
+            linestyle=":",
+        )
+
+    hist.assert_called_once()
+
+    kwargs = hist.call_args.kwargs
+
+    assert kwargs["hatch"] == "//"
+    assert kwargs["linestyle"] == ":"
+
+    plt.close(figure)
+
+
+def test_plot_scatter_forwards_scatter_kwargs() -> None:
+    figure, axis = plot_scatter(
+        [1.0, 2.0],
+        [3.0, 4.0],
+        rasterized=True,
+        edgecolors="black",
+        linewidths=0.5,
+        zorder=10,
+    )
+
+    collection = axis.collections[0]
+
+    assert collection.get_rasterized()
+    assert collection.get_zorder() == 10
+
+    np.testing.assert_allclose(
+        collection.get_linewidths(),
+        [0.5],
+    )
+
+    plt.close(figure)

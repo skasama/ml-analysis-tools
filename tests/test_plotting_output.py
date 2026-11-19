@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import matplotlib.pyplot as plt
 import pytest
 
@@ -39,5 +41,44 @@ def test_save_figure_rejects_missing_parent(tmp_path) -> None:
             tmp_path / "missing" / "plot.png",
             create_parents=False,
         )
+
+    plt.close(figure)
+
+
+def test_save_figure_forwards_kwargs(
+    tmp_path,
+) -> None:
+    figure, _ = plt.subplots()
+    path = tmp_path / "plot.png"
+
+    with patch.object(
+        figure,
+        "savefig",
+        wraps=figure.savefig,
+    ) as savefig:
+        save_figure(
+            figure,
+            path,
+            dpi=150,
+            facecolor="white",
+            edgecolor="black",
+            metadata={
+                "Creator": "ml-analysis-tools",
+            },
+        )
+
+    savefig.assert_called_once()
+
+    keyword_arguments = savefig.call_args.kwargs
+
+    assert keyword_arguments["dpi"] == 150
+    assert keyword_arguments["facecolor"] == "white"
+    assert keyword_arguments["edgecolor"] == "black"
+    assert keyword_arguments["metadata"] == {
+        "Creator": "ml-analysis-tools",
+    }
+    assert keyword_arguments["bbox_inches"] == "tight"
+
+    assert path.is_file()
 
     plt.close(figure)

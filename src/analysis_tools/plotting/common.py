@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,6 +26,7 @@ def plot_histogram(
     alpha: float | None = None,
     density: bool = False,
     figsize: tuple[float, float] = (6.4, 4.8),
+    **hist_kwargs: Any,
 ) -> tuple[Figure, Axes]:
     """
 
@@ -68,6 +70,8 @@ def plot_histogram(
         Default is False.
     figsize : tuple of float, optional
         The size of the figure to create if ax is None. Default is (6.4, 4.8).
+    **hist_kwargs : Any
+        Additional keyword arguments to pass to `Axes.hist()`.
 
     Returns
     -------
@@ -90,6 +94,7 @@ def plot_histogram(
         linewidth=linewidth,
         alpha=alpha,
         density=density,
+        **hist_kwargs,
     )
 
     if xlabel is not None:
@@ -134,6 +139,7 @@ def plot_series(
     capsize: float = 3.0,
     alpha: float | None = None,
     figsize: tuple[float, float] = (6.4, 4.8),
+    **series_kwargs: Any,
 ) -> tuple[Figure, Axes]:
     """
 
@@ -179,6 +185,8 @@ def plot_series(
         the default alpha will be used.
     figsize : tuple of float, optional
         The size of the figure to create if ax is None. Default is (6.4, 4.8).
+    **series_kwargs : Any
+        Additional keyword arguments to pass to `Axes.errorbar()`.
 
     Returns
     -------
@@ -217,6 +225,69 @@ def plot_series(
         markersize=markersize,
         capsize=capsize,
         alpha=alpha,
+        **series_kwargs,
+    )
+
+    if xlabel is not None:
+        ax.set_xlabel(xlabel)
+
+    if ylabel is not None:
+        ax.set_ylabel(ylabel)
+
+    if title is not None:
+        ax.set_title(title)
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
+    return figure, ax
+
+
+def plot_scatter(
+    x: ArrayLike,
+    y: ArrayLike,
+    *,
+    ax: Axes | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    title: str | None = None,
+    xlim: tuple[float, float] | None = None,
+    ylim: tuple[float, float] | None = None,
+    label: str | None = None,
+    color: str | None = None,
+    marker: str = "o",
+    marker_size: float = 5.0,
+    alpha: float | None = None,
+    figsize: tuple[float, float] = (6.4, 4.8),
+    **scatter_kwargs: Any,
+) -> tuple[Figure, Axes]:
+    """Plot a scatter series on a new or existing Axes."""
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    if x.ndim != 1 or y.ndim != 1:
+        raise ValueError("x and y must be one-dimensional.")
+
+    if len(x) != len(y):
+        raise ValueError("x and y must have the same length.")
+
+    if ax is None:
+        figure, ax = plt.subplots(figsize=figsize)
+    else:
+        figure = ax.figure
+
+    ax.scatter(
+        x,
+        y,
+        label=label,
+        color=color,
+        marker=marker,
+        s=marker_size,
+        alpha=alpha,
+        **scatter_kwargs,
     )
 
     if xlabel is not None:

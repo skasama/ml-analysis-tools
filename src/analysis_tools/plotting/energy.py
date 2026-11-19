@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import Any
 
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -24,6 +25,7 @@ def plot_energy_residuals(
     alpha: float | None = None,
     density: bool = False,
     figsize: tuple[float, float] = (6.4, 4.8),
+    **hist_kwargs: Any,
 ) -> tuple[Figure, Axes]:
     """
 
@@ -64,6 +66,8 @@ def plot_energy_residuals(
         Default is False.
     figsize : tuple of float, optional
         The size of the figure to create if ax is None. Default is (6.4, 4.8).
+    hist_kwargs : Any
+        Additional keyword arguments to pass to `Axes.hist()`.
 
     Returns
     -------
@@ -88,6 +92,7 @@ def plot_energy_residuals(
         alpha=alpha,
         density=density,
         figsize=figsize,
+        **hist_kwargs,
     )
 
 
@@ -111,6 +116,7 @@ def plot_energy_bias(
     capsize: float = 3.0,
     alpha: float | None = None,
     figsize: tuple[float, float] = (6.4, 4.8),
+    **series_kwargs: Any,
 ) -> tuple[Figure, Axes]:
     """
 
@@ -156,6 +162,8 @@ def plot_energy_bias(
         the default alpha will be used.
     figsize : tuple of float, optional
         The size of the figure to create if ax is None. Default is (6.4, 4.8).
+    **series_kwargs : Any
+        Additional keyword arguments to pass to `Axes.errorbar()`.
 
     Returns
     -------
@@ -181,6 +189,7 @@ def plot_energy_bias(
         capsize=capsize,
         alpha=alpha,
         figsize=figsize,
+        **series_kwargs,
     )
 
 
@@ -204,6 +213,7 @@ def plot_energy_resolution(
     capsize: float = 3.0,
     alpha: float | None = None,
     figsize: tuple[float, float] = (6.4, 4.8),
+    **series_kwargs: Any,
 ) -> tuple[Figure, Axes]:
     """
 
@@ -249,6 +259,8 @@ def plot_energy_resolution(
         the default alpha will be used.
     figsize : tuple of float, optional
         The size of the figure to create if ax is None. Default is (6.4, 4.8).
+    **series_kwargs : Any
+        Additional keyword arguments to pass to `Axes.errorbar()`.
 
     Returns
     -------
@@ -274,4 +286,5 @@ def plot_energy_resolution(
         capsize=capsize,
         alpha=alpha,
         figsize=figsize,
+        **series_kwargs,
     )

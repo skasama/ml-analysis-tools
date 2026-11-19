@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -181,5 +183,31 @@ def test_plot_vertex_prediction() -> None:
 
     assert all(len(axis.collections) == 1 for axis in axes)
     assert all(len(axis.lines) == 1 for axis in axes)
+
+    plt.close(figure)
+
+
+def test_plot_vertex_errors_forwards_hist_kwargs() -> None:
+    figure, axis = plt.subplots()
+
+    with patch.object(
+        axis,
+        "hist",
+        wraps=axis.hist,
+    ) as hist:
+        plot_vertex_errors(
+            [10.0, 20.0, 30.0],
+            ax=axis,
+            bins=[0.0, 20.0, 40.0],
+            linestyle="--",
+            zorder=7,
+        )
+
+    hist.assert_called_once()
+
+    kwargs = hist.call_args.kwargs
+
+    assert kwargs["linestyle"] == "--"
+    assert kwargs["zorder"] == 7
 
     plt.close(figure)
