@@ -1,5 +1,6 @@
 from analysis_tools.metrics.classification import (
     auc,
+    binned_classification_counts,
     binned_classification_metrics,
     class_metrics,
     classification_accuracy,
@@ -52,6 +53,7 @@ __all__ = [
     "binned_quantile",
     "make_bin_edges",
     "classification_efficiency",
+    "binned_classification_counts",
     "binned_classification_metrics",
     "classification_purity",
     "confusion_matrix",

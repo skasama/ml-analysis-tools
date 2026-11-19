@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from analysis_tools.metrics.classification import (
+    binned_classification_counts,
     binned_classification_metrics,
     class_metrics,
     classification_accuracy,
@@ -299,3 +300,40 @@ def test_binned_classification_metrics_returns_nan_for_empty_denominator() -> No
 
     assert np.isnan(efficiency[0])
     assert np.isnan(purity[0])
+
+
+def test_binned_classification_counts() -> None:
+    (
+        centers,
+        true_positive_counts,
+        true_class_counts,
+        predicted_class_counts,
+        event_counts,
+    ) = binned_classification_counts(
+        x=[0.5, 1.5, 2.5, 3.5],
+        predictions=[1, 0, 1, 1],
+        targets=[1, 1, 0, 1],
+        edges=[0.0, 2.0, 4.0],
+        class_label=1,
+    )
+
+    np.testing.assert_allclose(
+        centers,
+        [1.0, 3.0],
+    )
+    np.testing.assert_array_equal(
+        true_positive_counts,
+        [1, 1],
+    )
+    np.testing.assert_array_equal(
+        true_class_counts,
+        [2, 1],
+    )
+    np.testing.assert_array_equal(
+        predicted_class_counts,
+        [1, 2],
+    )
+    np.testing.assert_array_equal(
+        event_counts,
+        [2, 2],
+    )

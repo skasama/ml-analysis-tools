@@ -1,10 +1,13 @@
-"""Plot ML classification dependencies, optionally compared with fiTQun.
+### This script was refined by AI.
+### Need to confirm that the changes are correct and do not break the code.
+
+"""Plot classification dependencies, optionally comparing ML and fiTQun.
 
 Set FITQUN_PATH to None to plot ML results only.
 
-Edit the settings below and run:
+Run:
 
-    uv run python examples/plot_classification_dependencies.py
+    uv run python examples/full/plot_classification_dependencies.py
 """
 
 from dataclasses import dataclass
@@ -27,7 +30,8 @@ from analysis_tools.io import (
     save_csv,
 )
 from analysis_tools.metrics import (
-    binned_classification_metrics,
+    binned_classification_counts,
+    binomial_errors,
     make_bin_edges,
     predicted_labels,
     softmax,
@@ -39,8 +43,50 @@ from analysis_tools.transforms.geometry import (
     compute_wall,
 )
 
+
+@dataclass(frozen=True)
+class ClassificationDependencyData:
+    """Classification results and truth quantities for one method."""
+
+    name: str
+
+    predictions: np.ndarray
+    targets: np.ndarray
+
+    wall: np.ndarray
+    towall: np.ndarray
+    energy: np.ndarray
+
+    color: str
+    marker: str
+    linestyle: str
+
+    @property
+    def event_count(self) -> int:
+        """Return the number of events."""
+        return len(self.targets)
+
+    def __post_init__(self) -> None:
+        """Validate event-array lengths."""
+        event_count = len(self.targets)
+
+        arrays = {
+            "predictions": self.predictions,
+            "wall": self.wall,
+            "towall": self.towall,
+            "energy": self.energy,
+        }
+
+        for array_name, array in arrays.items():
+            if len(array) != event_count:
+                raise ValueError(
+                    f"{array_name} has {len(array)} events, "
+                    f"but targets has {event_count}."
+                )
+
+
 # ============================================================
-# ML input files
+# ML input
 # ============================================================
 
 SCORES_PATH = Path("path/to/outputs/preds.npy")
@@ -48,11 +94,6 @@ TARGETS_PATH = Path("path/to/outputs/targets.npy")
 
 # Contains positions, directions, energies, and labels.
 TRUTH_PATH = Path("path/to/classification_truth.npz")
-
-
-# ============================================================
-# Keys in the ML truth NPZ
-# ============================================================
 
 POSITIONS_KEY = "positions"
 DIRECTIONS_KEY = "directions"
@@ -79,20 +120,18 @@ FITQUN_KEYS = FitQunKeys(
     electron_momentum="fitqun/e_1rmom",
 )
 
-# fiTQun e/m score:
-#     muon_nll - electron_nll - 0.2 * electron_momentum
-#
-# score > threshold -> electron
-# score <= threshold -> muon
 FITQUN_SCORE_THRESHOLD = 0.0
 
 
 # ============================================================
-# Class definitions
+# Classes
 # ============================================================
 
-# The order must match the ML score columns.
-CLASS_LABELS = np.array([0, 1, 2], dtype=np.int64)
+# Must match the column order of the ML score array.
+CLASS_LABELS = np.array(
+    [0, 1, 2],
+    dtype=np.int64,
+)
 
 CLASS_NAMES = {
     0: "Electron",
@@ -100,28 +139,18 @@ CLASS_NAMES = {
     2: "Gamma",
 }
 
-CLASS_COLORS = {
-    0: "tab:blue",
-    1: "tab:orange",
-    2: "tab:green",
-}
-
 ELECTRON_LABEL = 0
 MUON_LABEL = 1
 
-# When fiTQun is enabled, compare only these supported classes.
+# fiTQun comparison is restricted to these classes.
 COMPARISON_CLASS_LABELS = np.array(
-    [ELECTRON_LABEL, MUON_LABEL],
+    [
+        ELECTRON_LABEL,
+        MUON_LABEL,
+    ],
     dtype=np.int64,
 )
 
-
-# ============================================================
-# ML input interpretation
-# ============================================================
-
-# True if preds.npy contains logits.
-# False if preds.npy already contains probabilities.
 APPLY_SOFTMAX = True
 
 
@@ -131,6 +160,18 @@ APPLY_SOFTMAX = True
 
 DETECTOR_RADIUS_CM = 1690.0
 DETECTOR_HALF_HEIGHT_CM = 1810.0
+DETECTOR_AXIS = 2
+
+
+# ============================================================
+# Statistical uncertainty
+# ============================================================
+
+BINOMIAL_ERROR_METHOD = "wilson"
+CONFIDENCE_LEVEL = 0.6827
+
+ERRORBAR_CAPSIZE = 2.5
+ERRORBAR_LINEWIDTH = 1.0
 
 
 # ============================================================
@@ -179,6 +220,7 @@ COMPARISON_CSV_FILENAME = "classification_dependencies_ml_vs_fitqun.csv"
 
 DPI = 200
 SHOW_FIGURES = True
+
 FIGURE_WIDTH_PER_COLUMN = 5.5
 FIGURE_HEIGHT_PER_ROW = 4.5
 
@@ -193,38 +235,16 @@ FITQUN_LINESTYLE = "--"
 LINEWIDTH = 1.8
 
 
-@dataclass(frozen=True)
-class ClassificationDependencyData:
-    """Classification results and corresponding truth quantities."""
-
-    name: str
-
-    predictions: np.ndarray
-    targets: np.ndarray
-
-    wall: np.ndarray
-    towall: np.ndarray
-    energy: np.ndarray
-
-    color: str
-    marker: str
-    linestyle: str
-
-    @property
-    def event_count(self) -> int:
-        return len(self.targets)
-
-
 def remove_nonfinite_events(
     *arrays: np.ndarray,
 ) -> tuple[tuple[np.ndarray, ...], int]:
-    """Remove events with non-finite values in any array."""
+    """Remove events containing non-finite values."""
     if not arrays:
         raise ValueError("At least one array is required.")
 
     validate_same_length(*arrays)
 
-    valid_mask = np.ones(
+    valid = np.ones(
         len(arrays[0]),
         dtype=bool,
     )
@@ -233,20 +253,20 @@ def remove_nonfinite_events(
         array = np.asarray(array)
 
         if array.ndim == 1:
-            valid_mask &= np.isfinite(array)
+            valid &= np.isfinite(array)
         else:
-            axes = tuple(range(1, array.ndim))
-            valid_mask &= np.all(
+            event_axes = tuple(range(1, array.ndim))
+            valid &= np.all(
                 np.isfinite(array),
-                axis=axes,
+                axis=event_axes,
             )
 
-    removed_count = int(np.count_nonzero(~valid_mask))
+    removed_count = int(np.count_nonzero(~valid))
 
-    selected = tuple(np.asarray(array)[valid_mask] for array in arrays)
+    selected = tuple(np.asarray(array)[valid] for array in arrays)
 
     if len(selected[0]) == 0:
-        raise ValueError("No finite events remain after filtering.")
+        raise ValueError("No finite events remain.")
 
     return selected, removed_count
 
@@ -255,7 +275,7 @@ def select_classes(
     data: ClassificationDependencyData,
     class_labels: np.ndarray,
 ) -> ClassificationDependencyData:
-    """Select events belonging to the requested truth classes."""
+    """Keep only events belonging to selected truth classes."""
     selected = np.isin(
         data.targets,
         class_labels,
@@ -263,7 +283,7 @@ def select_classes(
 
     if not np.any(selected):
         raise ValueError(
-            f"{data.name} has no events for classes {class_labels.tolist()}."
+            f"{data.name} contains no events for labels {class_labels.tolist()}."
         )
 
     return ClassificationDependencyData(
@@ -282,24 +302,24 @@ def select_classes(
 def create_ml_probabilities(
     scores: np.ndarray,
 ) -> np.ndarray:
-    """Convert ML outputs to probabilities."""
+    """Convert ML scores to probabilities."""
     if APPLY_SOFTMAX:
         return softmax(scores)
 
     if np.any(scores < 0.0):
-        raise ValueError("ML probabilities must be non-negative.")
+        raise ValueError("Probabilities must be non-negative.")
 
     if not np.allclose(
         np.sum(scores, axis=1),
         1.0,
     ):
-        raise ValueError("ML probability rows must sum to one.")
+        raise ValueError("Probability rows must sum to one.")
 
     return scores
 
 
 def load_ml_data() -> ClassificationDependencyData:
-    """Load ML classification outputs and truth information."""
+    """Load ML classification outputs and truth data."""
     scores, targets = load_array_pair(
         SCORES_PATH,
         TARGETS_PATH,
@@ -321,6 +341,7 @@ def load_ml_data() -> ClassificationDependencyData:
         scores,
         dtype=float,
     )
+
     targets = as_integer_array(
         targets,
         name="targets",
@@ -389,10 +410,7 @@ def load_ml_data() -> ClassificationDependencyData:
             f"truth={truth_labels[first]}."
         )
 
-    (
-        arrays,
-        removed_count,
-    ) = remove_nonfinite_events(
+    arrays, removed_count = remove_nonfinite_events(
         scores,
         targets,
         positions,
@@ -415,8 +433,7 @@ def load_ml_data() -> ClassificationDependencyData:
 
     if unknown_labels.size:
         raise ValueError(
-            "ML targets contain labels not listed in "
-            f"CLASS_LABELS: {unknown_labels.tolist()}."
+            f"ML targets contain unknown labels: {unknown_labels.tolist()}."
         )
 
     probabilities = create_ml_probabilities(scores)
@@ -428,6 +445,7 @@ def load_ml_data() -> ClassificationDependencyData:
         positions,
         radius=DETECTOR_RADIUS_CM,
         half_height=DETECTOR_HALF_HEIGHT_CM,
+        axis=DETECTOR_AXIS,
     )
 
     towall = compute_towall(
@@ -435,6 +453,7 @@ def load_ml_data() -> ClassificationDependencyData:
         directions,
         radius=DETECTOR_RADIUS_CM,
         half_height=DETECTOR_HALF_HEIGHT_CM,
+        axis=DETECTOR_AXIS,
     )
 
     print(f"ML non-finite events removed: {removed_count:,}")
@@ -455,16 +474,13 @@ def load_ml_data() -> ClassificationDependencyData:
 def load_fitqun_data(
     path: Path,
 ) -> ClassificationDependencyData:
-    """Load fiTQun classification outputs and truth information."""
+    """Load fiTQun classification outputs and truth data."""
     data = load_fitqun(
         path,
         keys=FITQUN_KEYS,
     )
 
-    (
-        arrays,
-        removed_count,
-    ) = remove_nonfinite_events(
+    arrays, removed_count = remove_nonfinite_events(
         data.electron_nll,
         data.muon_nll,
         data.electron_momentum,
@@ -496,6 +512,7 @@ def load_fitqun_data(
         positions,
         radius=DETECTOR_RADIUS_CM,
         half_height=DETECTOR_HALF_HEIGHT_CM,
+        axis=DETECTOR_AXIS,
     )
 
     towall = compute_towall(
@@ -503,6 +520,7 @@ def load_fitqun_data(
         directions,
         radius=DETECTOR_RADIUS_CM,
         half_height=DETECTOR_HALF_HEIGHT_CM,
+        axis=DETECTOR_AXIS,
     )
 
     print(f"fiTQun non-finite events removed: {removed_count:,}")
@@ -526,25 +544,89 @@ def calculate_dependency_metrics(
     dependency_name: str,
     edges: np.ndarray,
     class_label: int,
+    metric: str,
 ) -> tuple[
     np.ndarray,
     np.ndarray,
     np.ndarray,
     np.ndarray,
+    np.ndarray,
 ]:
-    """Calculate binned efficiency and purity."""
+    """Calculate one metric and its binomial uncertainty."""
+    if metric not in {
+        "efficiency",
+        "purity",
+    }:
+        raise ValueError("metric must be 'efficiency' or 'purity'.")
+
     dependency = getattr(
         method,
         dependency_name,
     )
 
-    return binned_classification_metrics(
+    (
+        centers,
+        true_positive_counts,
+        true_class_counts,
+        predicted_class_counts,
+        event_counts,
+    ) = binned_classification_counts(
         dependency,
         method.predictions,
         method.targets,
         edges,
         class_label=class_label,
-        minimum_events=MINIMUM_EVENTS,
+    )
+
+    denominator = (
+        true_class_counts if metric == "efficiency" else predicted_class_counts
+    )
+
+    values = np.divide(
+        true_positive_counts,
+        denominator,
+        out=np.full(
+            len(centers),
+            np.nan,
+            dtype=float,
+        ),
+        where=denominator > 0,
+    )
+
+    lower_error, upper_error = binomial_errors(
+        true_positive_counts,
+        denominator,
+        method=BINOMIAL_ERROR_METHOD,
+        confidence_level=CONFIDENCE_LEVEL,
+    )
+
+    lower_error = np.asarray(
+        lower_error,
+        dtype=float,
+    )
+    upper_error = np.asarray(
+        upper_error,
+        dtype=float,
+    )
+
+    valid = (
+        (event_counts >= MINIMUM_EVENTS)
+        & (denominator > 0)
+        & np.isfinite(values)
+        & np.isfinite(lower_error)
+        & np.isfinite(upper_error)
+    )
+
+    values[~valid] = np.nan
+    lower_error[~valid] = np.nan
+    upper_error[~valid] = np.nan
+
+    return (
+        centers,
+        values,
+        lower_error,
+        upper_error,
+        event_counts,
     )
 
 
@@ -558,7 +640,7 @@ def plot_metric_dependencies(
     *,
     metric: str,
 ):
-    """Plot efficiency or purity for all methods and classes."""
+    """Plot efficiency or purity with binomial errors."""
     if metric not in {
         "efficiency",
         "purity",
@@ -579,6 +661,7 @@ def plot_metric_dependencies(
 
     for row, class_label in enumerate(class_labels):
         label = int(class_label)
+
         class_name = CLASS_NAMES.get(
             label,
             str(label),
@@ -595,19 +678,30 @@ def plot_metric_dependencies(
             for method in methods:
                 (
                     centers,
-                    efficiency,
-                    purity,
-                    counts,
+                    values,
+                    lower_error,
+                    upper_error,
+                    event_counts,
                 ) = calculate_dependency_metrics(
                     method,
                     dependency_name=dependency_name,
                     edges=edges,
                     class_label=label,
+                    metric=metric,
                 )
 
-                values = efficiency if metric == "efficiency" else purity
+                valid = (
+                    np.isfinite(values)
+                    & np.isfinite(lower_error)
+                    & np.isfinite(upper_error)
+                )
 
-                valid = np.isfinite(values)
+                yerr = np.vstack(
+                    (
+                        lower_error[valid],
+                        upper_error[valid],
+                    )
+                )
 
                 plot_series(
                     centers[valid],
@@ -618,12 +712,23 @@ def plot_metric_dependencies(
                     marker=method.marker,
                     linestyle=method.linestyle,
                     linewidth=LINEWIDTH,
+                    yerr=yerr,
+                    capsize=ERRORBAR_CAPSIZE,
+                    elinewidth=ERRORBAR_LINEWIDTH,
                 )
 
-                for center, value, count in zip(
+                for (
+                    center,
+                    value,
+                    error_low,
+                    error_high,
+                    event_count,
+                ) in zip(
                     centers,
                     values,
-                    counts,
+                    lower_error,
+                    upper_error,
+                    event_counts,
                     strict=True,
                 ):
                     csv_rows.append(
@@ -635,7 +740,9 @@ def plot_metric_dependencies(
                             dependency_name,
                             center,
                             value,
-                            count,
+                            error_low,
+                            error_high,
+                            event_count,
                         ]
                     )
 
@@ -650,8 +757,13 @@ def plot_metric_dependencies(
 
     title_suffix = "ML vs fiTQun" if comparison_enabled else "ML"
 
+    if BINOMIAL_ERROR_METHOD == "wilson":
+        error_description = f"Wilson interval, {100.0 * CONFIDENCE_LEVEL:.2f}% CL"
+    else:
+        error_description = "Standard binomial error"
+
     figure.suptitle(
-        (f"Classification {metric} dependencies: {title_suffix}"),
+        (f"Classification {metric} dependencies: {title_suffix}\n{error_description}"),
         fontsize=16,
     )
     figure.tight_layout()
@@ -678,21 +790,48 @@ def save_results_csv(
             "dependency",
             "bin_center",
             "value",
+            "error_low",
+            "error_high",
             "event_count",
         ),
         fmt="%s",
     )
 
 
+def log_event_counts(
+    methods: list[ClassificationDependencyData],
+) -> None:
+    """Print total and per-class event counts."""
+    for method in methods:
+        print(f"{method.name} events: {method.event_count:,}")
+
+        labels, counts = np.unique(
+            method.targets,
+            return_counts=True,
+        )
+
+        for label, count in zip(
+            labels,
+            counts,
+            strict=True,
+        ):
+            class_name = CLASS_NAMES.get(
+                int(label),
+                str(label),
+            )
+
+            print(f"  {class_name}: {int(count):,}")
+
+
 def main() -> None:
     ml_data = load_ml_data()
 
-    methods = [ml_data]
-
-    if FITQUN_PATH is not None:
+    if FITQUN_PATH is None:
+        methods = [ml_data]
+        class_labels = CLASS_LABELS
+    else:
         fitqun_data = load_fitqun_data(FITQUN_PATH)
 
-        # Compare only classes supported by fiTQun.
         class_labels = COMPARISON_CLASS_LABELS
 
         methods = [
@@ -705,27 +844,8 @@ def main() -> None:
                 class_labels,
             ),
         ]
-    else:
-        class_labels = CLASS_LABELS
 
-    for method in methods:
-        print(f"{method.name} events: {method.event_count:,}")
-
-        unique_labels, counts = np.unique(
-            method.targets,
-            return_counts=True,
-        )
-
-        for label, count in zip(
-            unique_labels,
-            counts,
-            strict=True,
-        ):
-            class_name = CLASS_NAMES.get(
-                int(label),
-                str(label),
-            )
-            print(f"  {class_name}: {count:,}")
+    log_event_counts(methods)
 
     dependencies = (
         (

@@ -548,7 +548,134 @@ def binned_classification_metrics(
     NDArray[np.float64],
     NDArray[np.int64],
 ]:
-    """Calculate efficiency and purity for one class in each x bin."""
+    """
+
+    Calculate efficiency and purity for one class in each x bin.
+
+    Parameters
+    ----------
+    x : ArrayLike
+        The variable to bin.
+    predictions : ArrayLike
+        The predicted class labels.
+    targets : ArrayLike
+        The true class labels.
+    edges : ArrayLike
+        The bin edges for the variable x.
+    class_label : int
+        The class label for which to calculate the metrics.
+    minimum_events : int, default=1
+        The minimum number of events required in a bin to calculate the metrics.
+
+    Returns
+    -------
+    centers
+        Bin centers.
+    efficiency
+        Efficiency of the selected class in each bin.
+    purity
+        Purity of the selected class in each bin.
+    event_counts
+        Total number of events in each bin.
+    """
+    if minimum_events < 1:
+        raise ValueError("minimum_events must be at least 1.")
+
+    (
+        centers,
+        true_positive_counts,
+        true_class_counts,
+        predicted_class_counts,
+        event_counts,
+    ) = binned_classification_counts(
+        x,
+        predictions,
+        targets,
+        edges,
+        class_label=class_label,
+    )
+
+    efficiency = np.full(
+        len(centers),
+        np.nan,
+        dtype=float,
+    )
+    purity = np.full(
+        len(centers),
+        np.nan,
+        dtype=float,
+    )
+
+    valid_efficiency = (event_counts >= minimum_events) & (true_class_counts > 0)
+    valid_purity = (event_counts >= minimum_events) & (predicted_class_counts > 0)
+
+    efficiency[valid_efficiency] = (
+        true_positive_counts[valid_efficiency] / true_class_counts[valid_efficiency]
+    )
+    purity[valid_purity] = (
+        true_positive_counts[valid_purity] / predicted_class_counts[valid_purity]
+    )
+
+    return (
+        centers,
+        efficiency,
+        purity,
+        event_counts,
+    )
+
+
+def binned_classification_counts(
+    x: ArrayLike,
+    predictions: ArrayLike,
+    targets: ArrayLike,
+    edges: ArrayLike,
+    *,
+    class_label: int,
+) -> tuple[
+    NDArray[np.float64],
+    NDArray[np.int64],
+    NDArray[np.int64],
+    NDArray[np.int64],
+    NDArray[np.int64],
+]:
+    """
+
+    Calculate classification counts for one class in each bin.
+
+    Returns
+    -------
+    centers
+        Bin centers.
+    true_positive_counts
+        Events correctly predicted as the selected class.
+    true_class_counts
+        Truth events belonging to the selected class. This is the
+        denominator for efficiency.
+    predicted_class_counts
+        Events predicted as the selected class. This is the
+        denominator for purity.
+    event_counts
+        Total number of events in each bin.
+
+    Parameters
+    ----------
+    x : ArrayLike
+        The variable to bin.
+    predictions : ArrayLike
+        The predicted class labels.
+    targets : ArrayLike
+        The true class labels.
+    edges : ArrayLike
+        The bin edges for the variable x.
+    class_label : int
+        The class label for which to calculate the counts.
+
+    Returns
+    -------
+    tuple[NDArray[np.float64], NDArray[np.int64], NDArray[np.int64],
+    NDArray[np.int64], NDArray[np.int64]]
+        A tuple containing the bin centers, true positive
+    """
     x = as_scalar_array(
         x,
         name="x",
@@ -573,33 +700,38 @@ def binned_classification_metrics(
         names=("x", "predictions", "targets"),
     )
 
-    if minimum_events < 1:
-        raise ValueError("minimum_events must be at least 1.")
-
     if len(edges) < 2:
         raise ValueError("At least two bin edges are required.")
+
+    if not np.all(np.isfinite(edges)):
+        raise ValueError("Bin edges must contain only finite values.")
 
     if np.any(np.diff(edges) <= 0.0):
         raise ValueError("Bin edges must be strictly increasing.")
 
     centers = 0.5 * (edges[:-1] + edges[1:])
 
-    efficiencies = np.full(
-        len(centers),
-        np.nan,
-        dtype=float,
+    number_of_bins = len(centers)
+
+    true_positive_counts = np.zeros(
+        number_of_bins,
+        dtype=np.int64,
     )
-    purities = np.full(
-        len(centers),
-        np.nan,
-        dtype=float,
+    true_class_counts = np.zeros(
+        number_of_bins,
+        dtype=np.int64,
     )
-    counts = np.zeros(
-        len(centers),
+    predicted_class_counts = np.zeros(
+        number_of_bins,
+        dtype=np.int64,
+    )
+    event_counts = np.zeros(
+        number_of_bins,
         dtype=np.int64,
     )
 
     finite = np.isfinite(x)
+
     x = x[finite]
     predictions = predictions[finite]
     targets = targets[finite]
@@ -612,14 +744,11 @@ def binned_classification_metrics(
         - 1
     )
 
-    bin_indices[x == edges[-1]] = len(centers) - 1
+    # Include the rightmost edge in the final bin.
+    bin_indices[x == edges[-1]] = number_of_bins - 1
 
-    for index in range(len(centers)):
+    for index in range(number_of_bins):
         selected = bin_indices == index
-        counts[index] = np.count_nonzero(selected)
-
-        if counts[index] < minimum_events:
-            continue
 
         bin_predictions = predictions[selected]
         bin_targets = targets[selected]
@@ -627,19 +756,15 @@ def binned_classification_metrics(
         true_class = bin_targets == class_label
         predicted_class = bin_predictions == class_label
 
-        true_count = np.count_nonzero(true_class)
-        predicted_count = np.count_nonzero(predicted_class)
-        correct_count = np.count_nonzero(true_class & predicted_class)
-
-        if true_count > 0:
-            efficiencies[index] = correct_count / true_count
-
-        if predicted_count > 0:
-            purities[index] = correct_count / predicted_count
+        event_counts[index] = np.count_nonzero(selected)
+        true_positive_counts[index] = np.count_nonzero(true_class & predicted_class)
+        true_class_counts[index] = np.count_nonzero(true_class)
+        predicted_class_counts[index] = np.count_nonzero(predicted_class)
 
     return (
         centers,
-        efficiencies,
-        purities,
-        counts,
+        true_positive_counts,
+        true_class_counts,
+        predicted_class_counts,
+        event_counts,
     )
