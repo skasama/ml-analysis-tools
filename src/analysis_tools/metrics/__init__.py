@@ -34,6 +34,11 @@ from analysis_tools.metrics.statistics import (
     pearson_correlation,
     quantile,
 )
+from analysis_tools.metrics.uncertainty import (
+    binomial_error,
+    binomial_errors,
+    wilson_interval,
+)
 from analysis_tools.metrics.vertex import (
     vertex_errors,
     vertex_residuals,
@@ -66,6 +71,9 @@ __all__ = [
     "median",
     "pearson_correlation",
     "quantile",
+    "binomial_error",
+    "binomial_errors",
+    "wilson_interval",
     "vertex_errors",
     "vertex_residuals",
 ]
