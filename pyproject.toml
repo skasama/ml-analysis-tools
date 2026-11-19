@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "h5py",
+    "iminuit>=2.33.0",
     "matplotlib",
     "numpy",
     "omegaconf>=2.4.0",
