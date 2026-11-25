@@ -9,6 +9,9 @@ from analysis_tools.data.arrays import (
     as_vector_array,
     validate_same_length,
 )
+from analysis_tools.data.hits import (
+    hit_counts_from_indices,
+)
 from analysis_tools.data.models import EventIndex
 from analysis_tools.data.selection import (
     apply_mask,
@@ -30,4 +33,5 @@ __all__ = [
     "as_vector_array",
     "validate_same_length",
     "as_integer_array",
+    "hit_counts_from_indices",
 ]
