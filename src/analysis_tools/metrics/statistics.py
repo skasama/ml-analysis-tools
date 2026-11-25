@@ -286,3 +286,51 @@ def pearson_correlation(
         raise ValueError("Pearson correlation is undefined for constant values.")
 
     return float(np.corrcoef(x, y)[0, 1])
+
+
+def standard_error(
+    values: ArrayLike,
+    *,
+    axis: int | None = None,
+    ddof: int = 1,
+) -> float | NDArray[np.float64]:
+    """
+
+    Calculate the standard error of the mean.
+
+    Parameters
+    ----------
+    values : ArrayLike
+        The values for which to calculate the standard error.
+    axis : int | None, optional
+        The axis along which to calculate the standard error.
+        If None, the standard error is calculated over the entire array.
+    ddof : int, optional
+        The degrees of freedom to use in the calculation. Default is 1.
+
+    Returns
+    -------
+    float | NDArray[np.float64]
+        The standard error of the mean.
+    """
+    values = np.asarray(
+        values,
+        dtype=float,
+    )
+
+    if values.size == 0:
+        raise ValueError("At least one value is required.")
+
+    if not np.all(np.isfinite(values)):
+        raise ValueError("values must contain only finite values.")
+
+    sample_size = values.size if axis is None else values.shape[axis]
+
+    if sample_size <= ddof:
+        raise ValueError("The number of values must be greater than ddof.")
+
+    return np.std(
+        values,
+        axis=axis,
+        ddof=ddof,
+    ) / np.sqrt(sample_size)

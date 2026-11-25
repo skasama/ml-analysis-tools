@@ -9,6 +9,7 @@ from analysis_tools.metrics.statistics import (
     median,
     pearson_correlation,
     quantile,
+    standard_error,
 )
 
 
@@ -176,3 +177,56 @@ def test_pearson_correlation_requires_two_finite_pairs() -> None:
             [1.0, np.nan],
             [2.0, 3.0],
         )
+
+
+def test_standard_error() -> None:
+    values = np.array([1.0, 2.0, 3.0, 4.0])
+
+    actual = standard_error(values)
+
+    expected = np.std(values, ddof=1) / np.sqrt(len(values))
+
+    assert actual == pytest.approx(expected)
+
+
+def test_standard_error_along_axis() -> None:
+    values = np.array(
+        [
+            [1.0, 10.0],
+            [2.0, 20.0],
+            [3.0, 30.0],
+            [4.0, 40.0],
+        ]
+    )
+
+    actual = standard_error(
+        values,
+        axis=0,
+    )
+
+    expected = np.std(
+        values,
+        axis=0,
+        ddof=1,
+    ) / np.sqrt(len(values))
+
+    np.testing.assert_allclose(
+        actual,
+        expected,
+    )
+
+
+def test_standard_error_rejects_nonfinite_values() -> None:
+    with pytest.raises(
+        ValueError,
+        match="finite",
+    ):
+        standard_error([1.0, np.nan, 3.0])
+
+
+def test_standard_error_requires_more_values_than_ddof() -> None:
+    with pytest.raises(
+        ValueError,
+        match="greater than ddof",
+    ):
+        standard_error([1.0])

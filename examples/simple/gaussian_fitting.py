@@ -16,9 +16,7 @@ TRUE_SIGMA = 35.0
 FIT_RANGE = (-120.0, 120.0)
 NUMBER_OF_BINS = 60
 
-OUTPUT_PATH = Path(
-    "outputs/fitting/gaussian_fitting.png"
-)
+OUTPUT_PATH = Path("outputs/fitting/gaussian_fitting.png")
 
 SHOW_FIGURE = True
 DPI = 200
@@ -31,15 +29,11 @@ def gaussian(
     sigma: float,
 ) -> np.ndarray:
     """Return a Gaussian model evaluated at x."""
-    return amplitude * np.exp(
-        -0.5 * ((x - mean) / sigma) ** 2
-    )
+    return amplitude * np.exp(-0.5 * ((x - mean) / sigma) ** 2)
 
 
 def main() -> None:
-    rng = np.random.default_rng(
-        RANDOM_SEED
-    )
+    rng = np.random.default_rng(RANDOM_SEED)
 
     # Replace this synthetic array with a residual array when
     # applying the example to real reconstruction results.
@@ -49,10 +43,7 @@ def main() -> None:
         size=NUMBER_OF_EVENTS,
     )
 
-    selected = residuals[
-        (residuals >= FIT_RANGE[0])
-        & (residuals <= FIT_RANGE[1])
-    ]
+    selected = residuals[(residuals >= FIT_RANGE[0]) & (residuals <= FIT_RANGE[1])]
 
     counts, edges = np.histogram(
         selected,
@@ -60,9 +51,7 @@ def main() -> None:
         range=FIT_RANGE,
     )
 
-    centers = 0.5 * (
-        edges[:-1] + edges[1:]
-    )
+    centers = 0.5 * (edges[:-1] + edges[1:])
 
     # Poisson uncertainty for each histogram bin.
     #
@@ -80,15 +69,9 @@ def main() -> None:
         fit_y,
         fit_yerr,
         initial={
-            "amplitude": float(
-                np.max(fit_y)
-            ),
-            "mean": float(
-                np.mean(selected)
-            ),
-            "sigma": float(
-                np.std(selected)
-            ),
+            "amplitude": float(np.max(fit_y)),
+            "mean": float(np.mean(selected)),
+            "sigma": float(np.std(selected)),
         },
         limits={
             "amplitude": (0.0, None),
@@ -101,9 +84,7 @@ def main() -> None:
         ],
     )
 
-    figure, axis = plt.subplots(
-        figsize=(7.0, 5.0)
-    )
+    figure, axis = plt.subplots(figsize=(7.0, 5.0))
 
     axis.errorbar(
         centers,
@@ -155,37 +136,19 @@ def main() -> None:
         ),
     )
 
-
     axis.set_xlabel("Residual")
     axis.set_ylabel("Events per bin")
-    axis.set_title(
-        "Gaussian fit with iminuit"
-    )
+    axis.set_title("Gaussian fit with iminuit")
     axis.grid(alpha=0.3)
     axis.legend()
 
     figure.tight_layout()
 
-    print(
-        f"Events in fit range: "
-        f"{len(selected):,}"
-    )
+    print(f"Events in fit range: {len(selected):,}")
     print(f"Valid fit: {result.valid}")
-    print(
-        "Mean: "
-        f"{result.value('mean'):.6g} "
-        f"+/- {result.error('mean'):.6g}"
-    )
-    print(
-        "Sigma: "
-        f"{result.value('sigma'):.6g} "
-        f"+/- {result.error('sigma'):.6g}"
-    )
-    print(
-        "Chi-square / ndf: "
-        f"{chi_square:.1f} / {ndf} "
-        f"= {reduced_chi_square:.2f}"
-    )
+    print(f"Mean: {result.value('mean'):.6g} +/- {result.error('mean'):.6g}")
+    print(f"Sigma: {result.value('sigma'):.6g} +/- {result.error('sigma'):.6g}")
+    print(f"Chi-square / ndf: {chi_square:.1f} / {ndf} = {reduced_chi_square:.2f}")
 
     for parameter in (
         "mean",
@@ -194,15 +157,9 @@ def main() -> None:
         if parameter not in result.minos_errors:
             continue
 
-        error = result.minos_errors[
-            parameter
-        ]
+        error = result.minos_errors[parameter]
 
-        print(
-            f"{parameter} MINOS: "
-            f"{error.lower:+.6g}, "
-            f"{error.upper:+.6g}"
-        )
+        print(f"{parameter} MINOS: {error.lower:+.6g}, {error.upper:+.6g}")
 
     save_figure(
         figure,

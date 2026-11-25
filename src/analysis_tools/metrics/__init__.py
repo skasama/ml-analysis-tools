@@ -34,6 +34,7 @@ from analysis_tools.metrics.statistics import (
     median,
     pearson_correlation,
     quantile,
+    standard_error,
 )
 from analysis_tools.metrics.uncertainty import (
     binomial_error,
@@ -61,6 +62,7 @@ __all__ = [
     "roc_auc",
     "roc_curve",
     "softmax",
+    "standard_error",
     "threshold_metrics",
     "direction_cosines",
     "direction_errors",
