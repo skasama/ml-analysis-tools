@@ -504,11 +504,7 @@ def main() -> None:
         "Initial events",
         event_count,
     )
-
-    # ========================================================
     # 1. Label cut
-    # ========================================================
-
     active_indices = np.flatnonzero(selection_mask)
 
     selection_mask = apply_cut(
@@ -521,11 +517,7 @@ def main() -> None:
         name="Label selection",
         logger=logger,
     )
-
-    # ========================================================
     # 2. Hit-count cut
-    # ========================================================
-
     if hit_cut_enabled():
         event_hits_index = as_integer_array(
             arrays[EVENT_HITS_INDEX_KEY],
@@ -566,11 +558,7 @@ def main() -> None:
             logger,
             "Hit-count selection",
         )
-
-    # ========================================================
     # 3. Optional keep_event cut
-    # ========================================================
-
     if USE_KEEP_EVENT:
         if KEEP_EVENT_KEY is None:
             raise ValueError("KEEP_EVENT_KEY must be defined.")
@@ -595,11 +583,7 @@ def main() -> None:
             logger,
             "keep_event selection",
         )
-
-    # ========================================================
     # Load optional event quantities
-    # ========================================================
-
     energies = None
     positions = None
     directions = None
@@ -638,11 +622,7 @@ def main() -> None:
 
     if directions is not None and len(directions) != event_count:
         raise ValueError("labels and directions have different lengths.")
-
-    # ========================================================
     # 4. Valid-data cut
-    # ========================================================
-
     valid_arrays: list[np.ndarray] = []
 
     if energies is not None:
@@ -672,11 +652,7 @@ def main() -> None:
             logger,
             "Valid-data selection",
         )
-
-    # ========================================================
     # 5. Energy cut
-    # ========================================================
-
     if energy_cut_enabled():
         if energies is None:
             raise ValueError("Energy cut is enabled, but energies were not loaded.")
@@ -700,11 +676,7 @@ def main() -> None:
             logger,
             "Energy selection",
         )
-
-    # ========================================================
     # 6. Momentum cut
-    # ========================================================
-
     if momentum_cut_enabled():
         if energies is None:
             raise ValueError("Momentum cut is enabled, but energies were not loaded.")
@@ -730,11 +702,7 @@ def main() -> None:
             logger,
             "Momentum selection",
         )
-
-    # ========================================================
     # 7. Wall cut
-    # ========================================================
-
     if wall_cut_enabled():
         if positions is None:
             raise ValueError("Wall cut is enabled, but positions were not loaded.")
@@ -761,11 +729,7 @@ def main() -> None:
             logger,
             "Wall selection",
         )
-
-    # ========================================================
     # 8. ToWall cut
-    # ========================================================
-
     if towall_cut_enabled():
         if positions is None or directions is None:
             raise ValueError(
@@ -795,11 +759,7 @@ def main() -> None:
             logger,
             "ToWall selection",
         )
-
-    # ========================================================
     # Candidate events
-    # ========================================================
-
     candidate_indices = np.flatnonzero(selection_mask).astype(np.int64)
 
     if len(candidate_indices) == 0:
@@ -813,11 +773,7 @@ def main() -> None:
         candidate_indices,
         labels,
     )
-
-    # ========================================================
     # Sampling
-    # ========================================================
-
     if BALANCED_SAMPLING:
         selected_indices = balanced_sample_indices(
             candidate_indices,
@@ -843,11 +799,7 @@ def main() -> None:
         selected_indices,
         labels,
     )
-
-    # ========================================================
     # Train / validation / test split
-    # ========================================================
-
     split = split_indices(
         selected_indices,
         train_fraction=(TRAIN_FRACTION),
@@ -879,11 +831,7 @@ def main() -> None:
         split.test,
         labels,
     )
-
-    # ========================================================
     # Save
-    # ========================================================
-
     OUTPUT_NPZ.parent.mkdir(
         parents=True,
         exist_ok=True,
