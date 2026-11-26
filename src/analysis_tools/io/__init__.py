@@ -25,6 +25,10 @@ from analysis_tools.io.numpy import (
     save_npy,
     save_npz,
 )
+from analysis_tools.io.prediction import (
+    PredictionData,
+    load_prediction_data,
+)
 
 __all__ = [
     "load_analysis_config",
@@ -44,4 +48,6 @@ __all__ = [
     "FitQunData",
     "FitQunKeys",
     "load_fitqun",
+    "PredictionData",
+    "load_prediction_data",
 ]

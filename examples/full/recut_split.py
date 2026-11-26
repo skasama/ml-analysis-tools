@@ -113,42 +113,27 @@ ZENITH_AXIS = 2
 
 def hit_cut_enabled() -> bool:
     """Return whether the hit-count cut is enabled."""
-    return (
-        MINIMUM_HITS is not None
-        or MAXIMUM_HITS is not None
-    )
+    return MINIMUM_HITS is not None or MAXIMUM_HITS is not None
 
 
 def energy_cut_enabled() -> bool:
     """Return whether the energy cut is enabled."""
-    return (
-        MINIMUM_ENERGY is not None
-        or MAXIMUM_ENERGY is not None
-    )
+    return MINIMUM_ENERGY is not None or MAXIMUM_ENERGY is not None
 
 
 def momentum_cut_enabled() -> bool:
     """Return whether the momentum cut is enabled."""
-    return (
-        MINIMUM_MOMENTUM is not None
-        or MAXIMUM_MOMENTUM is not None
-    )
+    return MINIMUM_MOMENTUM is not None or MAXIMUM_MOMENTUM is not None
 
 
 def wall_cut_enabled() -> bool:
     """Return whether the Wall cut is enabled."""
-    return (
-        MINIMUM_WALL_CM is not None
-        or MAXIMUM_WALL_CM is not None
-    )
+    return MINIMUM_WALL_CM is not None or MAXIMUM_WALL_CM is not None
 
 
 def towall_cut_enabled() -> bool:
     """Return whether the ToWall cut is enabled."""
-    return (
-        MINIMUM_TOWALL_CM is not None
-        or MAXIMUM_TOWALL_CM is not None
-    )
+    return MINIMUM_TOWALL_CM is not None or MAXIMUM_TOWALL_CM is not None
 
 
 def create_logger() -> logging.Logger:
@@ -158,37 +143,25 @@ def create_logger() -> logging.Logger:
         exist_ok=True,
     )
 
-    logger = logging.getLogger(
-        "recut_split"
-    )
+    logger = logging.getLogger("recut_split")
     logger.setLevel(logging.INFO)
     logger.handlers.clear()
     logger.propagate = False
 
-    formatter = logging.Formatter(
-        "%(message)s"
-    )
+    formatter = logging.Formatter("%(message)s")
 
     stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(
-        formatter
-    )
+    stream_handler.setFormatter(formatter)
 
     file_handler = logging.FileHandler(
         OUTPUT_LOG,
         mode="w",
         encoding="utf-8",
     )
-    file_handler.setFormatter(
-        formatter
-    )
+    file_handler.setFormatter(formatter)
 
-    logger.addHandler(
-        stream_handler
-    )
-    logger.addHandler(
-        file_handler
-    )
+    logger.addHandler(stream_handler)
+    logger.addHandler(file_handler)
 
     return logger
 
@@ -196,28 +169,19 @@ def create_logger() -> logging.Logger:
 def validate_settings() -> None:
     """Validate settings before opening input files."""
     if USE_KEEP_EVENT and KEEP_EVENT_KEY is None:
-        raise ValueError(
-            "KEEP_EVENT_KEY must be defined when "
-            "USE_KEEP_EVENT is True."
-        )
+        raise ValueError("KEEP_EVENT_KEY must be defined when USE_KEEP_EVENT is True.")
 
     if DIRECTION_SOURCE not in {
         "directions",
         "angles",
     }:
-        raise ValueError(
-            "DIRECTION_SOURCE must be "
-            "'directions' or 'angles'."
-        )
+        raise ValueError("DIRECTION_SOURCE must be 'directions' or 'angles'.")
 
     if ENERGY_TYPE not in {
         "total",
         "kinetic",
     }:
-        raise ValueError(
-            "ENERGY_TYPE must be "
-            "'total' or 'kinetic'."
-        )
+        raise ValueError("ENERGY_TYPE must be 'total' or 'kinetic'.")
 
 
 def required_keys() -> list[str]:
@@ -227,50 +191,29 @@ def required_keys() -> list[str]:
     ]
 
     if hit_cut_enabled():
-        keys.append(
-            EVENT_HITS_INDEX_KEY
-        )
+        keys.append(EVENT_HITS_INDEX_KEY)
 
     if USE_KEEP_EVENT:
         if KEEP_EVENT_KEY is None:
             raise ValueError(
-                "KEEP_EVENT_KEY must be defined when "
-                "USE_KEEP_EVENT is True."
+                "KEEP_EVENT_KEY must be defined when USE_KEEP_EVENT is True."
             )
 
-        keys.append(
-            KEEP_EVENT_KEY
-        )
+        keys.append(KEEP_EVENT_KEY)
 
-    if (
-        energy_cut_enabled()
-        or momentum_cut_enabled()
-    ):
-        keys.append(
-            ENERGIES_KEY
-        )
+    if energy_cut_enabled() or momentum_cut_enabled():
+        keys.append(ENERGIES_KEY)
 
-    if (
-        wall_cut_enabled()
-        or towall_cut_enabled()
-    ):
-        keys.append(
-            POSITIONS_KEY
-        )
+    if wall_cut_enabled() or towall_cut_enabled():
+        keys.append(POSITIONS_KEY)
 
     if towall_cut_enabled():
         if DIRECTION_SOURCE == "directions":
-            keys.append(
-                DIRECTIONS_KEY
-            )
+            keys.append(DIRECTIONS_KEY)
         else:
-            keys.append(
-                ANGLES_KEY
-            )
+            keys.append(ANGLES_KEY)
 
-    return list(
-        dict.fromkeys(keys)
-    )
+    return list(dict.fromkeys(keys))
 
 
 def load_total_hit_count() -> int:
@@ -280,16 +223,9 @@ def load_total_hit_count() -> int:
         "r",
     ) as h5_file:
         if HIT_PMT_KEY not in h5_file:
-            raise KeyError(
-                f"Missing dataset '{HIT_PMT_KEY}' "
-                f"in {INPUT_HDF5}."
-            )
+            raise KeyError(f"Missing dataset '{HIT_PMT_KEY}' in {INPUT_HDF5}.")
 
-        return int(
-            h5_file[
-                HIT_PMT_KEY
-            ].shape[0]
-        )
+        return int(h5_file[HIT_PMT_KEY].shape[0])
 
 
 def load_parent_split() -> SplitIndices:
@@ -318,9 +254,7 @@ def load_parent_split() -> SplitIndices:
         ),
     )
 
-    validate_split(
-        split
-    )
+    validate_split(split)
 
     return split
 
@@ -335,10 +269,7 @@ def apply_cut(
 ) -> np.ndarray:
     """Apply a cut evaluated on currently active events."""
     if len(local_mask) != len(active_indices):
-        raise ValueError(
-            f"{name} mask length does not match "
-            "the active event count."
-        )
+        raise ValueError(f"{name} mask length does not match the active event count.")
 
     updated_mask = current_mask.copy()
     updated_mask[active_indices] &= local_mask
@@ -370,21 +301,9 @@ def preserve_split(
 ) -> SplitIndices:
     """Apply a mask without changing split membership."""
     return SplitIndices(
-        train=parent.train[
-            selection_mask[
-                parent.train
-            ]
-        ],
-        validation=parent.validation[
-            selection_mask[
-                parent.validation
-            ]
-        ],
-        test=parent.test[
-            selection_mask[
-                parent.test
-            ]
-        ],
+        train=parent.train[selection_mask[parent.train]],
+        validation=parent.validation[selection_mask[parent.validation]],
+        test=parent.test[selection_mask[parent.test]],
     )
 
 
@@ -393,9 +312,7 @@ def validate_recut_membership(
     recut: SplitIndices,
 ) -> None:
     """Verify that recutting preserved split membership."""
-    validate_split(
-        recut
-    )
+    validate_split(recut)
 
     train_is_subset = np.all(
         np.isin(
@@ -406,8 +323,7 @@ def validate_recut_membership(
 
     if not train_is_subset:
         raise ValueError(
-            "Recut train indices are not a subset "
-            "of the parent train split."
+            "Recut train indices are not a subset of the parent train split."
         )
 
     validation_is_subset = np.all(
@@ -419,8 +335,7 @@ def validate_recut_membership(
 
     if not validation_is_subset:
         raise ValueError(
-            "Recut validation indices are not a subset "
-            "of the parent validation split."
+            "Recut validation indices are not a subset of the parent validation split."
         )
 
     test_is_subset = np.all(
@@ -432,8 +347,7 @@ def validate_recut_membership(
 
     if not test_is_subset:
         raise ValueError(
-            "Recut test indices are not a subset "
-            "of the parent test split."
+            "Recut test indices are not a subset of the parent test split."
         )
 
 
@@ -496,9 +410,7 @@ def log_settings(
     logger.info("Particle labels:")
     logger.info("  0: muon")
     logger.info("  1: electron")
-    logger.info(
-        "  2: charged pion"
-    )
+    logger.info("  2: charged pion")
 
     logger.info("")
     logger.info("Dataset keys:")
@@ -513,18 +425,12 @@ def log_settings(
             EVENT_HITS_INDEX_KEY,
         )
         logger.info(
-            "  Hit PMTs: %s "
-            "(shape only)",
+            "  Hit PMTs: %s (shape only)",
             HIT_PMT_KEY,
         )
-        logger.info(
-            "  Hit counts: calculated from "
-            "event boundaries"
-        )
+        logger.info("  Hit counts: calculated from event boundaries")
     else:
-        logger.info(
-            "  Hit-count datasets: not required"
-        )
+        logger.info("  Hit-count datasets: not required")
 
     logger.info(
         "  keep_event: %s",
@@ -609,9 +515,7 @@ def main() -> None:
     validate_settings()
 
     logger = create_logger()
-    log_settings(
-        logger
-    )
+    log_settings(logger)
 
     # ========================================================
     # Load and validate the parent split
@@ -633,16 +537,11 @@ def main() -> None:
     event_count = len(labels)
 
     if np.any(parent_selected < 0):
-        raise ValueError(
-            "The parent split contains negative indices."
-        )
+        raise ValueError("The parent split contains negative indices.")
 
-    if np.any(
-        parent_selected >= event_count
-    ):
+    if np.any(parent_selected >= event_count):
         raise ValueError(
-            "The parent split contains indices outside "
-            "the HDF5 event range."
+            "The parent split contains indices outside the HDF5 event range."
         )
 
     # Only events in the parent split are eligible.
@@ -650,9 +549,7 @@ def main() -> None:
         event_count,
         dtype=bool,
     )
-    selection_mask[
-        parent_selected
-    ] = True
+    selection_mask[parent_selected] = True
 
     logger.info("")
     logger.info("Cut flow:")
@@ -667,9 +564,7 @@ def main() -> None:
     # ========================================================
 
     if ALLOWED_LABELS is not None:
-        active_indices = np.flatnonzero(
-            selection_mask
-        )
+        active_indices = np.flatnonzero(selection_mask)
 
         selection_mask = apply_cut(
             selection_mask,
@@ -694,21 +589,15 @@ def main() -> None:
 
     if hit_cut_enabled():
         event_hits_index = as_integer_array(
-            arrays[
-                EVENT_HITS_INDEX_KEY
-            ],
+            arrays[EVENT_HITS_INDEX_KEY],
             name=EVENT_HITS_INDEX_KEY,
         )
 
-        total_hit_count = (
-            load_total_hit_count()
-        )
+        total_hit_count = load_total_hit_count()
 
-        hit_counts = (
-            hit_counts_from_indices(
-                event_hits_index,
-                total_hit_count,
-            )
+        hit_counts = hit_counts_from_indices(
+            event_hits_index,
+            total_hit_count,
         )
 
         if len(hit_counts) != event_count:
@@ -719,16 +608,12 @@ def main() -> None:
                 f"hit_counts={len(hit_counts)}."
             )
 
-        active_indices = np.flatnonzero(
-            selection_mask
-        )
+        active_indices = np.flatnonzero(selection_mask)
 
         selection_mask = apply_cut(
             selection_mask,
             hit_count_cut(
-                hit_counts[
-                    active_indices
-                ],
+                hit_counts[active_indices],
                 minimum=MINIMUM_HITS,
                 maximum=MAXIMUM_HITS,
             ),
@@ -749,29 +634,18 @@ def main() -> None:
 
     if USE_KEEP_EVENT:
         if KEEP_EVENT_KEY is None:
-            raise ValueError(
-                "KEEP_EVENT_KEY must be defined."
-            )
+            raise ValueError("KEEP_EVENT_KEY must be defined.")
 
-        keep_event = keep_event_cut(
-            arrays[KEEP_EVENT_KEY]
-        )
+        keep_event = keep_event_cut(arrays[KEEP_EVENT_KEY])
 
         if len(keep_event) != event_count:
-            raise ValueError(
-                "labels and keep_event have "
-                "different lengths."
-            )
+            raise ValueError("labels and keep_event have different lengths.")
 
-        active_indices = np.flatnonzero(
-            selection_mask
-        )
+        active_indices = np.flatnonzero(selection_mask)
 
         selection_mask = apply_cut(
             selection_mask,
-            keep_event[
-                active_indices
-            ],
+            keep_event[active_indices],
             active_indices,
             name="keep_event selection",
             logger=logger,
@@ -798,10 +672,7 @@ def main() -> None:
         ).astype(float)
 
         if len(energies) != event_count:
-            raise ValueError(
-                "labels and energies have "
-                "different lengths."
-            )
+            raise ValueError("labels and energies have different lengths.")
 
     if POSITIONS_KEY in arrays:
         positions = as_vector_array(
@@ -811,38 +682,23 @@ def main() -> None:
         ).astype(float)
 
         if len(positions) != event_count:
-            raise ValueError(
-                "labels and positions have "
-                "different lengths."
-            )
+            raise ValueError("labels and positions have different lengths.")
 
-    if (
-        DIRECTION_SOURCE == "directions"
-        and DIRECTIONS_KEY in arrays
-    ):
+    if DIRECTION_SOURCE == "directions" and DIRECTIONS_KEY in arrays:
         directions = as_vector_array(
             arrays[DIRECTIONS_KEY],
             size=3,
             name=DIRECTIONS_KEY,
         ).astype(float)
 
-    elif (
-        DIRECTION_SOURCE == "angles"
-        and ANGLES_KEY in arrays
-    ):
+    elif DIRECTION_SOURCE == "angles" and ANGLES_KEY in arrays:
         directions = direction_from_angles(
             arrays[ANGLES_KEY],
             axis=ZENITH_AXIS,
         )
 
-    if (
-        directions is not None
-        and len(directions) != event_count
-    ):
-        raise ValueError(
-            "labels and directions have "
-            "different lengths."
-        )
+    if directions is not None and len(directions) != event_count:
+        raise ValueError("labels and directions have different lengths.")
 
     # ========================================================
     # 4. Valid-data cut
@@ -851,35 +707,22 @@ def main() -> None:
     valid_arrays: list[np.ndarray] = []
 
     if energies is not None:
-        valid_arrays.append(
-            energies
-        )
+        valid_arrays.append(energies)
 
     if positions is not None:
-        valid_arrays.append(
-            positions
-        )
+        valid_arrays.append(positions)
 
     if directions is not None:
-        valid_arrays.append(
-            directions
-        )
+        valid_arrays.append(directions)
 
     if valid_arrays:
-        active_indices = np.flatnonzero(
-            selection_mask
-        )
+        active_indices = np.flatnonzero(selection_mask)
 
-        active_arrays = [
-            array[active_indices]
-            for array in valid_arrays
-        ]
+        active_arrays = [array[active_indices] for array in valid_arrays]
 
         selection_mask = apply_cut(
             selection_mask,
-            valid_data_cut(
-                *active_arrays
-            ),
+            valid_data_cut(*active_arrays),
             active_indices,
             name="Valid-data selection",
             logger=logger,
@@ -897,21 +740,14 @@ def main() -> None:
 
     if energy_cut_enabled():
         if energies is None:
-            raise ValueError(
-                "Energy cut is enabled, "
-                "but energies were not loaded."
-            )
+            raise ValueError("Energy cut is enabled, but energies were not loaded.")
 
-        active_indices = np.flatnonzero(
-            selection_mask
-        )
+        active_indices = np.flatnonzero(selection_mask)
 
         selection_mask = apply_cut(
             selection_mask,
             energy_cut(
-                energies[
-                    active_indices
-                ],
+                energies[active_indices],
                 minimum=MINIMUM_ENERGY,
                 maximum=MAXIMUM_ENERGY,
             ),
@@ -932,24 +768,15 @@ def main() -> None:
 
     if momentum_cut_enabled():
         if energies is None:
-            raise ValueError(
-                "Momentum cut is enabled, "
-                "but energies were not loaded."
-            )
+            raise ValueError("Momentum cut is enabled, but energies were not loaded.")
 
-        active_indices = np.flatnonzero(
-            selection_mask
-        )
+        active_indices = np.flatnonzero(selection_mask)
 
         selection_mask = apply_cut(
             selection_mask,
             momentum_cut(
-                energies[
-                    active_indices
-                ],
-                labels[
-                    active_indices
-                ],
+                energies[active_indices],
+                labels[active_indices],
                 energy_type=ENERGY_TYPE,
                 minimum=MINIMUM_MOMENTUM,
                 maximum=MAXIMUM_MOMENTUM,
@@ -971,27 +798,16 @@ def main() -> None:
 
     if wall_cut_enabled():
         if positions is None:
-            raise ValueError(
-                "Wall cut is enabled, "
-                "but positions were not loaded."
-            )
+            raise ValueError("Wall cut is enabled, but positions were not loaded.")
 
-        active_indices = np.flatnonzero(
-            selection_mask
-        )
+        active_indices = np.flatnonzero(selection_mask)
 
         selection_mask = apply_cut(
             selection_mask,
             wall_cut(
-                positions[
-                    active_indices
-                ],
-                detector_radius=(
-                    DETECTOR_RADIUS_CM
-                ),
-                detector_half_height=(
-                    DETECTOR_HALF_HEIGHT_CM
-                ),
+                positions[active_indices],
+                detector_radius=(DETECTOR_RADIUS_CM),
+                detector_half_height=(DETECTOR_HALF_HEIGHT_CM),
                 axis=DETECTOR_AXIS,
                 minimum=MINIMUM_WALL_CM,
                 maximum=MAXIMUM_WALL_CM,
@@ -1012,35 +828,20 @@ def main() -> None:
     # ========================================================
 
     if towall_cut_enabled():
-        if (
-            positions is None
-            or directions is None
-        ):
+        if positions is None or directions is None:
             raise ValueError(
-                "ToWall cut is enabled, "
-                "but positions or directions "
-                "were not loaded."
+                "ToWall cut is enabled, but positions or directions were not loaded."
             )
 
-        active_indices = np.flatnonzero(
-            selection_mask
-        )
+        active_indices = np.flatnonzero(selection_mask)
 
         selection_mask = apply_cut(
             selection_mask,
             towall_cut(
-                positions[
-                    active_indices
-                ],
-                directions[
-                    active_indices
-                ],
-                detector_radius=(
-                    DETECTOR_RADIUS_CM
-                ),
-                detector_half_height=(
-                    DETECTOR_HALF_HEIGHT_CM
-                ),
+                positions[active_indices],
+                directions[active_indices],
+                detector_radius=(DETECTOR_RADIUS_CM),
+                detector_half_height=(DETECTOR_HALF_HEIGHT_CM),
                 axis=DETECTOR_AXIS,
                 minimum=MINIMUM_TOWALL_CM,
                 maximum=MAXIMUM_TOWALL_CM,
@@ -1136,9 +937,7 @@ def main() -> None:
         parent_train_idxs=parent.train,
         parent_val_idxs=parent.validation,
         parent_test_idxs=parent.test,
-        parent_selected_idxs=(
-            parent_selected
-        ),
+        parent_selected_idxs=(parent_selected),
         selection_mask=selection_mask,
     )
 
