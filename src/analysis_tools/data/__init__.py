@@ -14,6 +14,8 @@ from analysis_tools.data.hits import (
 )
 from analysis_tools.data.models import EventIndex
 from analysis_tools.data.selection import (
+    CutFlowEntry,
+    EventSelection,
     apply_mask,
     apply_mask_to_mapping,
     combine_masks,
@@ -34,4 +36,6 @@ __all__ = [
     "validate_same_length",
     "as_integer_array",
     "hit_counts_from_indices",
+    "CutFlowEntry",
+    "EventSelection",
 ]
