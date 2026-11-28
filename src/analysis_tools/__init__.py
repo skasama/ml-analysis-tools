@@ -6,8 +6,10 @@ from analysis_tools.analysis.evaluation import (
 )
 from analysis_tools.data import (
     BinnedSelection,
+    EventIndex,
     EventSelection,
     make_binned_selection,
+    match_event_indices,
 )
 from analysis_tools.io import (
     MLRunConfig,
@@ -37,6 +39,7 @@ __all__ = [
     "DirectionQuantities",
     "EnergyQuantities",
     "EventSelection",
+    "EventIndex",
     "MLRunConfig",
     "MLRunData",
     "MetricResult",
@@ -49,6 +52,7 @@ __all__ = [
     "evaluate_dependency",
     "load_ml_run",
     "load_prediction_data",
+    "match_event_indices",
     "make_binned_selection",
     "plot_evaluation",
     "save_figure",

@@ -4,7 +4,7 @@ Set FITQUN_PATH to None to plot only ML results.
 
 Edit the settings below and run:
 
-    uv run python examples/plot_resolution_dependencies.py
+    uv run python examples/full/plot_resolution_dependencies_ml_vs_fitqun.py
 """
 
 from dataclasses import dataclass

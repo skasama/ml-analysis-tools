@@ -5,7 +5,7 @@ same order.
 
 Edit the settings below and run:
 
-    uv run python examples/plot_resolution_dependencies.py
+    uv run python examples/full/plot_resolution_dependencies.py
 """
 
 from pathlib import Path

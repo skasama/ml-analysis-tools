@@ -65,6 +65,46 @@ def validate_aligned(
     )
 
 
+def match_event_indices(
+    reference: EventIndex,
+    candidate: EventIndex,
+) -> tuple[NDArray[np.int64], NDArray[np.int64]]:
+    """Return row indices for shared keys, preserving reference order.
+
+    Event keys must be unique within each input. Events without a counterpart
+    are omitted from both returned index arrays.
+    """
+    validate_unique_keys(reference)
+    validate_unique_keys(candidate)
+
+    candidate_positions = {
+        (
+            candidate.file_ids[index].item(),
+            candidate.event_ids[index].item(),
+        ): index
+        for index in range(len(candidate))
+    }
+
+    reference_positions: list[int] = []
+    matched_candidate_positions: list[int] = []
+
+    for index in range(len(reference)):
+        key = (
+            reference.file_ids[index].item(),
+            reference.event_ids[index].item(),
+        )
+        candidate_position = candidate_positions.get(key)
+
+        if candidate_position is not None:
+            reference_positions.append(index)
+            matched_candidate_positions.append(candidate_position)
+
+    return (
+        np.asarray(reference_positions, dtype=np.int64),
+        np.asarray(matched_candidate_positions, dtype=np.int64),
+    )
+
+
 def validate_matched_samples(
     reference: MatchedComparisonSample,
     candidate: MatchedComparisonSample,

@@ -26,58 +26,80 @@ Examples are divided into two groups:
 
 ```text
 examples/
-├── simple/    Short examples for starting a new analysis
-└── full/      Complete analysis workflows
+├── simple/       Small, focused examples
+├── full/         End-to-end data workflows
+└── notebooks/    Interactive versions and walkthroughs
 ```
 
 ### Simple examples
 
-Copy a short example and edit the paths and settings near the top of the file.
+Use these to learn one operation or try an API with synthetic data:
 
 ```bash
-cp examples/simple/plot_vertex_errors.py my_vertex_analysis.py
-uv run python my_vertex_analysis.py
+uv run python examples/simple/task_api_walkthrough.py
 ```
 
-Example settings:
+`task_api_walkthrough.py` runs without input files and demonstrates event
+selection with cut flow, aligned task quantities (vertex, direction, energy,
+and classification), dependency evaluation, and saved plots. To start from
+real `.npy` prediction files, use `load_prediction_data.py` or
+`plot_vertex_errors.py`; edit the input and output paths near the top of the
+script. `evaluate_results.py` is another small example of a binned metric and
+uncertainty plot.
 
-```python
-from pathlib import Path
+### Full workflows
 
-PREDICTIONS_PATH = Path("path/to/outputs/preds.npy")
-TARGETS_PATH = Path("path/to/outputs/targets.npy")
-OUTPUT_PATH = Path("outputs/vertex_errors.png")
-```
+| Example | What it demonstrates |
+| --- | --- |
+| `examples/full/plot_vertex_regression.py` | Vertex prediction, residuals, and resolution |
+| `examples/full/plot_direction_regression.py` | Direction residuals, opening angles, and degree-based angular metrics |
+| `examples/full/plot_energy_regression.py` | Absolute and fractional energy residuals and profiles |
+| `examples/full/plot_classification.py` | Classification performance and score-based metrics |
+| `examples/full/plot_resolution_dependencies.py` | Resolution versus Wall, ToWall, and energy |
+| `examples/full/plot_classification_dependencies.py` | Efficiency and purity versus event dependencies |
+| `examples/full/plot_resolution_dependencies_ml_vs_fitqun.py` | Multi-task resolution dependencies for ML and fiTQun |
+| `examples/full/plot_classification_dependencies_ml_vs_fitqun.py` | Classification efficiency/purity comparison for ML and fiTQun |
+| `examples/full/compare_vertex_samples.py` | Multiple ML/fiTQun samples, shared cuts, optional normalization and ID-matched comparison |
 
-### Full examples
-
-Full examples include complete plots and statistical summaries.
-
-```text
-examples/full/
-├── plot_vertex_regression.py
-├── plot_direction_regression.py
-├── plot_energy_regression.py
-├── plot_classification.py
-├── plot_resolution_dependencies.py
-└── plot_classification_dependencies.py
-```
-
-Run a full example:
+These are data-dependent scripts: set the file paths, dataset keys, units,
+normalization ranges, and selection settings before running. The two
+`*_ml_vs_fitqun.py` scripts use their own settings and fit-parameter
+conventions; the `compare_vertex_samples.py` workflow instead supports multiple
+input samples and optional event-ID alignment. For example:
 
 ```bash
-uv run python examples/full/plot_vertex_regression.py
+uv run python examples/full/compare_vertex_samples.py
 ```
 
-Each example contains editable settings for:
+### Notebooks
 
-- input and output paths
-- normalization ranges
-- detector geometry
-- binning
-- colors and line styles
-- displayed statistics
-- optional fiTQun comparison
+Open the notebooks from the repository root:
+
+```bash
+uv run jupyter lab examples/notebooks
+```
+
+`task_api_walkthrough.ipynb` is runnable without private inputs.
+`compare_vertex_samples.ipynb` follows the complete file-to-plot workflow;
+edit its paths and dataset keys first.
+
+`compare_vertex_samples.py` and its matching notebook show the full HDF5/ML
+loading, event-selection, evaluation, and plotting workflow. The truth-label
+selection is shared across samples; optional nhit and fiducial-Wall cuts are
+configured explicitly and applied consistently. The default does not impose a
+Wall cut. Independent comparisons do not assume event correspondence. Optional
+matched comparisons require equivalent, unique file/event identifiers in all
+inputs. Resolution and bias are shown separately: signed X/Y/Z/R resolution
+uses half the central 16th–84th percentile interval, 3D resolution uses the
+68th percentile of the error magnitude, and bias uses the mean signed residual
+with standard error. These are explicit example metric choices and should be
+adapted to the analysis definition.
+
+All examples use the same principle: keep each cut mask aligned across every
+event-level quantity, use common bin edges when comparing distributions, and
+state the metric and uncertainty being plotted. The plots are illustrative;
+they are not a substitute for analysis-specific validation of cuts, units, or
+statistical definitions.
 
 ## Python API
 
@@ -113,6 +135,13 @@ axis.grid(alpha=0.25)
 A complete runnable example is available at
 `examples/simple/evaluate_results.py`.
 
+For a complete file-to-plot workflow comparing multiple ML runs with fiTQun,
+including label selection, optional nhit/fiducial cuts, and matched-event
+analysis, see:
+
+- `examples/full/compare_vertex_samples.py`
+- `examples/notebooks/compare_vertex_samples.ipynb`
+
 For ML outputs that must stay aligned to their source HDF5 rows:
 
 ```python
@@ -136,7 +165,9 @@ selected_run = run.select(selection.mask)
 
 `hdf5_keys` remain full HDF5 paths. `run.select()` applies one sample's
 Boolean or integer selection to predictions, targets, indices, and all loaded
-source arrays together. Direction quantities return theta, phi, their residuals,
+source arrays together. If `indices_path` is omitted, source HDF5 rows must
+already be in prediction order and have the same event count; only the count
+can be validated. Direction quantities return theta, phi, their residuals,
 and `opening_angles` in degrees by default. Phi residuals use the shortest
 signed difference in [-180, 180] degrees. Pass
 `calculate_direction_quantities(..., degrees=False)` for radians.

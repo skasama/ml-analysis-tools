@@ -254,13 +254,49 @@ def test_load_ml_run(tmp_path) -> None:
     np.testing.assert_array_equal(selected.source["multi/labels"], [0])
 
 
-def test_load_ml_run_requires_indices(tmp_path) -> None:
-    config = MLRunConfig(
-        name="ML",
-        source_hdf5=tmp_path / "source.hy",
-        predictions_path=tmp_path / "predictions.npy",
-        targets_path=tmp_path / "targets.npy",
+def test_load_ml_run_without_indices_requires_aligned_source_rows(tmp_path) -> None:
+    source_path = tmp_path / "source.hy"
+    predictions_path = tmp_path / "predictions.npy"
+    targets_path = tmp_path / "targets.npy"
+
+    with h5py.File(source_path, "w") as file:
+        file.create_dataset("multi/labels", data=[0, 1])
+
+    np.save(predictions_path, [[1.0], [2.0]])
+    np.save(targets_path, [[0.0], [1.0]])
+
+    run = load_ml_run(
+        MLRunConfig(
+            name="ML",
+            source_hdf5=source_path,
+            predictions_path=predictions_path,
+            targets_path=targets_path,
+        ),
+        hdf5_keys=["multi/labels"],
     )
 
-    with pytest.raises(ValueError, match="indices_path is required"):
-        load_ml_run(config, hdf5_keys=["multi/labels"])
+    assert run.predictions.indices is None
+    np.testing.assert_array_equal(run.source["multi/labels"], [0, 1])
+
+
+def test_load_ml_run_without_indices_rejects_different_source_length(tmp_path) -> None:
+    source_path = tmp_path / "source.hy"
+    predictions_path = tmp_path / "predictions.npy"
+    targets_path = tmp_path / "targets.npy"
+
+    with h5py.File(source_path, "w") as file:
+        file.create_dataset("multi/labels", data=[0, 1, 2])
+
+    np.save(predictions_path, [[1.0], [2.0]])
+    np.save(targets_path, [[0.0], [1.0]])
+
+    with pytest.raises(ValueError, match="selected events"):
+        load_ml_run(
+            MLRunConfig(
+                name="ML",
+                source_hdf5=source_path,
+                predictions_path=predictions_path,
+                targets_path=targets_path,
+            ),
+            hdf5_keys=["multi/labels"],
+        )

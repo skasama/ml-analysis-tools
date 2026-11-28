@@ -7,7 +7,7 @@ Set FITQUN_PATH to None to plot ML results only.
 
 Run:
 
-    uv run python examples/full/plot_classification_dependencies.py
+    uv run python examples/full/plot_classification_dependencies_ml_vs_fitqun.py
 """
 
 from dataclasses import dataclass

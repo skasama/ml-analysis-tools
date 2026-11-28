@@ -3,6 +3,7 @@ import pytest
 
 from analysis_tools.data.alignment import (
     find_duplicate_keys,
+    match_event_indices,
     validate_aligned,
     validate_matched_samples,
     validate_unique_keys,
@@ -45,6 +46,55 @@ def test_validate_matched_samples() -> None:
     )
 
     validate_matched_samples(reference, candidate)
+
+
+def test_match_event_indices_preserves_reference_order() -> None:
+    reference = EventIndex.from_arrays(
+        file_ids=[1, 1, 2, 3],
+        event_ids=[10, 20, 30, 40],
+    )
+    candidate = EventIndex.from_arrays(
+        file_ids=[3, 1, 1],
+        event_ids=[40, 10, 99],
+    )
+
+    reference_rows, candidate_rows = match_event_indices(reference, candidate)
+
+    np.testing.assert_array_equal(reference_rows, [0, 3])
+    np.testing.assert_array_equal(candidate_rows, [1, 0])
+
+
+def test_match_event_indices_returns_empty_arrays_when_no_matches() -> None:
+    reference = EventIndex.from_arrays([1], [10])
+    candidate = EventIndex.from_arrays([2], [20])
+
+    reference_rows, candidate_rows = match_event_indices(reference, candidate)
+
+    assert reference_rows.dtype == np.int64
+    assert candidate_rows.dtype == np.int64
+    assert len(reference_rows) == 0
+    assert len(candidate_rows) == 0
+
+
+@pytest.mark.parametrize(
+    ("reference", "candidate"),
+    [
+        (
+            EventIndex.from_arrays([1, 1], [10, 10]),
+            EventIndex.from_arrays([1], [10]),
+        ),
+        (
+            EventIndex.from_arrays([1], [10]),
+            EventIndex.from_arrays([1, 1], [10, 10]),
+        ),
+    ],
+)
+def test_match_event_indices_rejects_duplicate_keys(
+    reference,
+    candidate,
+) -> None:
+    with pytest.raises(ValueError, match="Duplicate event keys"):
+        match_event_indices(reference, candidate)
 
 
 def test_find_duplicate_keys() -> None:

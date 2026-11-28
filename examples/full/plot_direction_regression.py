@@ -2,7 +2,7 @@
 
 Edit the settings below and run:
 
-    uv run python examples/plot_direction_regression.py
+    uv run python examples/full/plot_direction_regression.py
 """
 
 from pathlib import Path

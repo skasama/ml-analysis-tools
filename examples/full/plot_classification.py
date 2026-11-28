@@ -2,7 +2,7 @@
 
 Edit the settings below and run:
 
-    uv run python examples/plot_classification.py
+    uv run python examples/full/plot_classification.py
 """
 
 from pathlib import Path

@@ -4,7 +4,7 @@ Set FITQUN_PATH to None to plot ML results only.
 
 Edit the settings below and run:
 
-    uv run python examples/plot_classification_dependencies.py
+    uv run python examples/simple/plot_vertex_errors.py
 """
 
 from dataclasses import dataclass

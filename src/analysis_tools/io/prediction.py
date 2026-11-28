@@ -190,14 +190,14 @@ def load_ml_run(
     config: MLRunConfig,
     hdf5_keys: Sequence[str],
 ) -> MLRunData:
-    """Load one ML run and source-HDF5 arrays aligned by indices."""
+    """Load one ML run and event-aligned source-HDF5 arrays.
+
+    When ``indices_path`` is set, source rows are gathered in prediction order.
+    Without indices, source datasets must already be in prediction order and
+    have the same event count; only this length correspondence can be checked.
+    """
     if not hdf5_keys:
         raise ValueError("At least one HDF5 dataset key is required.")
-
-    if config.indices_path is None:
-        raise ValueError(
-            "MLRunConfig.indices_path is required to align source HDF5 events."
-        )
 
     prediction_data = load_prediction_data(
         config.predictions_path,
@@ -205,13 +205,17 @@ def load_ml_run(
         config.indices_path,
     )
 
-    if prediction_data.indices is None:
-        raise ValueError("ML run indices could not be loaded.")
-
-    source = load_hdf5(
-        config.source_hdf5,
-        keys=hdf5_keys,
-        indices=prediction_data.indices,
+    source = (
+        load_hdf5(
+            config.source_hdf5,
+            keys=hdf5_keys,
+            indices=prediction_data.indices,
+        )
+        if prediction_data.indices is not None
+        else load_hdf5(
+            config.source_hdf5,
+            keys=hdf5_keys,
+        )
     )
 
     return MLRunData(

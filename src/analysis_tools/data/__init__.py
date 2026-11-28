@@ -1,5 +1,6 @@
 from analysis_tools.data.alignment import (
     find_duplicate_keys,
+    match_event_indices,
     validate_aligned,
     validate_matched_samples,
     validate_unique_keys,
@@ -36,6 +37,7 @@ __all__ = [
     "IndependentComparisonSample",
     "MatchedComparisonSample",
     "find_duplicate_keys",
+    "match_event_indices",
     "validate_aligned",
     "validate_matched_samples",
     "validate_unique_keys",
