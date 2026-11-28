@@ -306,3 +306,452 @@ def plot_scatter(
         ax.set_ylim(ylim)
 
     return figure, ax
+
+
+def plot_prediction_vs_truth(
+    predictions: np.ndarray,
+    targets: np.ndarray,
+    *,
+    ax: plt.Axes | None = None,
+    add_diagonal: bool = True,
+    **kwargs,
+) -> plt.Axes:
+    """
+
+    Plot predictions against targets as a scatter plot.
+
+    Parameters
+    ----------
+    predictions : np.ndarray
+        The predicted values, shape (N,).
+    targets : np.ndarray
+        The true values, shape (N,).
+    ax : plt.Axes, optional
+        The Matplotlib Axes to plot on. If None, a new figure and axes will be created.
+    add_diagonal : bool, optional
+        Whether to add a diagonal line representing perfect predictions.
+        Default is True.
+    **kwargs : Any
+        Additional keyword arguments to pass to `Axes.scatter()`.
+
+    Returns
+    -------
+    plt.Axes
+        The Matplotlib Axes object containing the scatter plot.
+    """
+    predictions = np.asarray(
+        predictions,
+        dtype=float,
+    )
+    targets = np.asarray(
+        targets,
+        dtype=float,
+    )
+
+    if predictions.ndim != 1:
+        raise ValueError("predictions must be one-dimensional.")
+
+    if targets.ndim != 1:
+        raise ValueError("targets must be one-dimensional.")
+
+    if len(predictions) != len(targets):
+        raise ValueError("predictions and targets must have the same number of events.")
+
+    if ax is None:
+        _, ax = plt.subplots()
+
+    scatter_options = {
+        "s": 4.0,
+        "alpha": 0.3,
+        "edgecolors": "none",
+        "rasterized": True,
+    }
+    scatter_options.update(kwargs)
+
+    ax.scatter(
+        targets,
+        predictions,
+        **scatter_options,
+    )
+
+    if add_diagonal:
+        minimum = min(
+            np.min(targets),
+            np.min(predictions),
+        )
+        maximum = max(
+            np.max(targets),
+            np.max(predictions),
+        )
+
+        ax.plot(
+            [minimum, maximum],
+            [minimum, maximum],
+            color="black",
+            linestyle="--",
+            linewidth=1.2,
+        )
+
+    return ax
+
+
+def plot_residual_distribution(
+    residuals: np.ndarray,
+    *,
+    ax: plt.Axes | None = None,
+    bins: int | np.ndarray = 100,
+    label: str | None = None,
+    show_zero_line: bool = True,
+    show_bias: bool = True,
+    bias: float | None = None,
+    resolution: float | None = None,
+    unit: str | None = None,
+    **kwargs,
+) -> plt.Axes:
+    """
+
+    Plot a one-dimensional residual distribution.
+
+    Parameters
+    ----------
+    residuals : np.ndarray
+        The residuals to plot, shape (N,).
+    ax : plt.Axes, optional
+        The Matplotlib Axes to plot on. If None, a new figure and axes will be created.
+    bins : int or np.ndarray, optional
+        The number of bins or the bin edges for the histogram. Default is 100.
+    label : str, optional
+        The label for the histogram. If None, no label will be set.
+    show_zero_line : bool, optional
+        Whether to show a vertical line at zero. Default is True.
+    show_bias : bool, optional
+        Whether to show the bias in the legend. Default is True.
+    bias : float, optional
+        The bias value to display in the legend. If None, the bias will be calculated
+          from the residuals.
+    resolution : float, optional
+        The resolution value to display in the legend. If None, no resolution
+        will be displayed.
+    unit : str, optional
+        The unit of the residuals to display in the legend. If None, no unit
+        will be displayed.
+    **kwargs : Any
+        Additional keyword arguments to pass to `Axes.hist()`.
+
+    Returns
+    -------
+    plt.Axes
+        The Matplotlib Axes object containing the histogram.
+    """
+    residuals = np.asarray(
+        residuals,
+        dtype=float,
+    )
+
+    if residuals.ndim != 1:
+        raise ValueError("residuals must be one-dimensional.")
+
+    if not np.all(np.isfinite(residuals)):
+        raise ValueError("residuals must contain only finite values.")
+
+    if ax is None:
+        _, ax = plt.subplots()
+
+    value_unit = f" {unit}" if unit is not None else ""
+
+    label_parts = []
+
+    if label is not None:
+        label_parts.append(label)
+
+    if show_bias:
+        if bias is None:
+            bias = float(np.mean(residuals))
+
+        label_parts.append(f"Bias: {bias:.3g}{value_unit}")
+
+    if resolution is not None:
+        label_parts.append(f"Resolution: {resolution:.3g}{value_unit}")
+
+    plot_label = ", ".join(label_parts) if label_parts else None
+
+    ax.hist(
+        residuals,
+        bins=bins,
+        histtype="step",
+        density=True,
+        label=plot_label,
+        **kwargs,
+    )
+
+    if show_zero_line:
+        ax.axvline(
+            0.0,
+            color="black",
+            linestyle=":",
+            linewidth=1.0,
+        )
+
+    return ax
+
+
+def plot_dependency(
+    x: np.ndarray,
+    values: np.ndarray,
+    *,
+    errors: np.ndarray | None = None,
+    ax: plt.Axes | None = None,
+    label: str | None = None,
+    **kwargs,
+) -> plt.Axes:
+    """
+
+    Plot values as a function of another quantity.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        The x-coordinates of the data points, shape (N,).
+    values : np.ndarray
+        The y-coordinates of the data points, shape (N,).
+    errors : np.ndarray, optional
+        The vertical uncertainties of the data points. Can be either shape (N,)
+        for symmetric errors
+        or shape (2, N) for asymmetric errors. If None, no error bars will be plotted.
+        Default is None.
+    ax : plt.Axes, optional
+        The Matplotlib Axes to plot on. If None, a new figure and axes will be created.
+    label : str, optional
+        The label for the data series. If None, no label will be set.
+    **kwargs : Any
+        Additional keyword arguments to pass to `Axes.errorbar()` or `Axes.plot()`.
+
+    Returns
+    -------
+    plt.Axes
+        The Matplotlib Axes object containing the plot.
+    """
+    x = np.asarray(
+        x,
+        dtype=float,
+    )
+    values = np.asarray(
+        values,
+        dtype=float,
+    )
+
+    if x.ndim != 1:
+        raise ValueError("x must be one-dimensional.")
+
+    if values.ndim != 1:
+        raise ValueError("values must be one-dimensional.")
+
+    if len(x) != len(values):
+        raise ValueError("x and values must have the same length.")
+
+    if errors is not None:
+        errors = np.asarray(
+            errors,
+            dtype=float,
+        )
+
+        valid_error_shape = errors.shape == values.shape or errors.shape == (
+            2,
+            len(values),
+        )
+
+        if not valid_error_shape:
+            raise ValueError("errors must have shape (N,) or (2, N).")
+
+        if np.any(errors < 0.0):
+            raise ValueError("errors must not contain negative values.")
+
+    if ax is None:
+        _, ax = plt.subplots()
+
+    valid = np.isfinite(x) & np.isfinite(values)
+
+    if errors is not None:
+        if errors.ndim == 1:
+            valid &= np.isfinite(errors)
+            selected_errors = errors[valid]
+        else:
+            valid &= np.all(
+                np.isfinite(errors),
+                axis=0,
+            )
+            selected_errors = errors[:, valid]
+
+        ax.errorbar(
+            x[valid],
+            values[valid],
+            yerr=selected_errors,
+            label=label,
+            **kwargs,
+        )
+
+    else:
+        ax.plot(
+            x[valid],
+            values[valid],
+            label=label,
+            **kwargs,
+        )
+
+    return ax
+
+
+def plot_event_counts(
+    x: np.ndarray,
+    counts: np.ndarray,
+    *,
+    ax: plt.Axes | None = None,
+    label: str | None = None,
+    width: float | None = None,
+    **kwargs,
+) -> plt.Axes:
+    """
+
+    Plot event counts as bars.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        The x-coordinates of the bars, shape (N,).
+    counts : np.ndarray
+        The event counts for each bar, shape (N,).
+    ax : plt.Axes, optional
+        The Matplotlib Axes to plot on. If None, a new figure and axes will be created.
+    label : str, optional
+        The label for the data series. If None, no label will be set.
+    width : float, optional
+        The width of the bars. If None, the width will be automatically determined.
+    **kwargs : Any
+        Additional keyword arguments to pass to `Axes.bar()`.
+
+    Returns
+    -------
+    plt.Axes
+        The Matplotlib Axes object containing the plot.
+    """
+    x = np.asarray(
+        x,
+        dtype=float,
+    )
+    counts = np.asarray(
+        counts,
+    )
+
+    if x.ndim != 1:
+        raise ValueError("x must be one-dimensional.")
+
+    if counts.ndim != 1:
+        raise ValueError("counts must be one-dimensional.")
+
+    if len(x) != len(counts):
+        raise ValueError("x and counts must have the same length.")
+
+    if np.any(counts < 0):
+        raise ValueError("counts must not contain negative values.")
+
+    if ax is None:
+        _, ax = plt.subplots()
+
+    if width is None:
+        if len(x) > 1:
+            width = 0.8 * float(np.min(np.diff(x)))
+        else:
+            width = 0.8
+
+    valid = np.isfinite(x) & np.isfinite(counts)
+
+    ax.bar(
+        x[valid],
+        counts[valid],
+        width=width,
+        label=label,
+        **kwargs,
+    )
+
+    return ax
+
+
+def annotate_values(
+    x: np.ndarray,
+    values: np.ndarray,
+    *,
+    ax: plt.Axes,
+    fmt: str = ".3g",
+    offset_points: float = 4.0,
+    **kwargs,
+) -> plt.Axes:
+    """
+
+    Annotate finite values at their corresponding coordinates.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        The x-coordinates of the values to annotate, shape (N,).
+    values : np.ndarray
+        The values to annotate, shape (N,).
+    ax : plt.Axes
+        The Matplotlib Axes to annotate.
+    fmt : str, optional
+        The format string for the annotated values. Default is ".3g".
+    offset_points : float, optional
+        The offset in points for the annotation text. Default is 4.0.
+    **kwargs : Any
+        Additional keyword arguments to pass to `Axes.annotate()`.
+
+    Returns
+    -------
+    plt.Axes
+        The Matplotlib Axes object containing the annotations.
+    """
+    x = np.asarray(
+        x,
+        dtype=float,
+    )
+    values = np.asarray(
+        values,
+        dtype=float,
+    )
+
+    if x.ndim != 1:
+        raise ValueError("x must be one-dimensional.")
+
+    if values.ndim != 1:
+        raise ValueError("values must be one-dimensional.")
+
+    if len(x) != len(values):
+        raise ValueError("x and values must have the same length.")
+
+    text_options = {
+        "ha": "center",
+        "va": "bottom",
+        "fontsize": 8,
+    }
+    text_options.update(kwargs)
+
+    valid = np.isfinite(x) & np.isfinite(values)
+
+    for index in np.flatnonzero(valid):
+        ax.annotate(
+            format(
+                values[index],
+                fmt,
+            ),
+            xy=(
+                x[index],
+                values[index],
+            ),
+            xytext=(
+                0.0,
+                offset_points,
+            ),
+            textcoords="offset points",
+            **text_options,
+        )
+
+    return ax

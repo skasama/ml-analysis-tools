@@ -1,6 +1,9 @@
 import numpy as np
 import pytest
 
+from analysis_tools.analysis.vertex_regression import (
+    calculate_vertex_quantities,
+)
 from analysis_tools.metrics.vertex import (
     vertex_errors,
     vertex_residuals,
@@ -69,3 +72,79 @@ def test_vertex_residuals_reject_invalid_shape() -> None:
             predictions=np.zeros((2, 2)),
             targets=np.zeros((2, 3)),
         )
+
+
+def test_calculate_vertex_quantities() -> None:
+    predictions = np.array(
+        [
+            [3.0, 4.0, 2.0],
+            [0.0, 2.0, 5.0],
+        ]
+    )
+
+    targets = np.array(
+        [
+            [0.0, 0.0, 2.0],
+            [0.0, 1.0, 1.0],
+        ]
+    )
+
+    result = calculate_vertex_quantities(
+        predictions,
+        targets,
+    )
+
+    np.testing.assert_allclose(
+        result.residuals,
+        [
+            [3.0, 4.0, 0.0],
+            [0.0, 1.0, 4.0],
+        ],
+    )
+
+    np.testing.assert_allclose(
+        result.prediction_r,
+        [5.0, 2.0],
+    )
+
+    np.testing.assert_allclose(
+        result.target_r,
+        [0.0, 1.0],
+    )
+
+    np.testing.assert_allclose(
+        result.residual_r,
+        [5.0, 1.0],
+    )
+
+    np.testing.assert_allclose(
+        result.errors_3d,
+        [
+            5.0,
+            np.sqrt(17.0),
+        ],
+    )
+
+    assert result.event_count == 2
+
+
+def test_vertex_quantities_select() -> None:
+    quantities = calculate_vertex_quantities(
+        predictions=np.array(
+            [
+                [1.0, 0.0, 0.0],
+                [2.0, 0.0, 0.0],
+                [3.0, 0.0, 0.0],
+            ]
+        ),
+        targets=np.zeros((3, 3)),
+    )
+
+    selected = quantities.select(np.array([True, False, True]))
+
+    assert selected.event_count == 2
+
+    np.testing.assert_allclose(
+        selected.residual_x,
+        [1.0, 3.0],
+    )

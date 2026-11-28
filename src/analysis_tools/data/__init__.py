@@ -9,6 +9,10 @@ from analysis_tools.data.arrays import (
     as_vector_array,
     validate_same_length,
 )
+from analysis_tools.data.binning import (
+    BinnedSelection,
+    make_binned_selection,
+)
 from analysis_tools.data.hits import (
     hit_counts_from_indices,
 )
@@ -34,6 +38,8 @@ __all__ = [
     "as_scalar_array",
     "as_vector_array",
     "validate_same_length",
+    "BinnedSelection",
+    "make_binned_selection",
     "as_integer_array",
     "hit_counts_from_indices",
     "CutFlowEntry",

@@ -144,3 +144,120 @@ def analyze_vertex_regression(
         valid_mask=valid_mask,
         removed_event_count=original_count - len(predictions),
     )
+
+
+@dataclass(frozen=True)
+class VertexQuantities:
+    """
+
+    Event-level quantities for vertex analysis.
+
+    Attributes
+    ----------
+    predictions : np.ndarray
+        The predicted vertex positions, shape (N, 3).
+    targets : np.ndarray
+        The true vertex positions, shape (N, 3).
+    residuals : np.ndarray
+        The residuals between predictions and targets, shape (N, 3).
+    residual_r : np.ndarray
+        The radial residuals between predictions and targets, shape (N,).
+    errors_3d : np.ndarray
+        The 3D errors between predictions and targets, shape (N,).
+    prediction_r : np.ndarray
+        The predicted radial positions, shape (N,).
+    target_r : np.ndarray
+        The true radial positions, shape (N,).
+    """
+
+    predictions: np.ndarray
+    targets: np.ndarray
+
+    residuals: np.ndarray
+    residual_r: np.ndarray
+    errors_3d: np.ndarray
+
+    prediction_r: np.ndarray
+    target_r: np.ndarray
+
+    @property
+    def event_count(self) -> int:
+        """Return the number of events."""
+        return len(self.targets)
+
+    @property
+    def residual_x(self) -> np.ndarray:
+        """Return x residuals."""
+        return self.residuals[:, 0]
+
+    @property
+    def residual_y(self) -> np.ndarray:
+        """Return y residuals."""
+        return self.residuals[:, 1]
+
+    @property
+    def residual_z(self) -> np.ndarray:
+        """Return z residuals."""
+        return self.residuals[:, 2]
+
+    def select(self, selection: np.ndarray) -> "VertexQuantities":
+        """Return quantities selected by a Boolean or index array."""
+        return VertexQuantities(
+            predictions=self.predictions[selection],
+            targets=self.targets[selection],
+            residuals=self.residuals[selection],
+            residual_r=self.residual_r[selection],
+            errors_3d=self.errors_3d[selection],
+            prediction_r=self.prediction_r[selection],
+            target_r=self.target_r[selection],
+        )
+
+
+def calculate_vertex_quantities(
+    predictions: np.ndarray,
+    targets: np.ndarray,
+) -> VertexQuantities:
+    """
+
+    Calculate event-level vertex quantities.
+
+    Parameters
+    ----------
+    predictions : np.ndarray
+        The predicted vertex positions, shape (N, 3).
+    targets : np.ndarray
+        The true vertex positions, shape (N, 3).
+
+    Returns
+    -------
+    VertexQuantities
+        The calculated vertex quantities.
+    """
+
+    predictions = as_vector_array(
+        predictions,
+        size=3,
+        name="predictions",
+    ).astype(float)
+
+    targets = as_vector_array(targets, size=3, name="targets").astype(float)
+
+    validate_same_length(predictions, targets, names=("predictions", "targets"))
+
+    residuals = predictions - targets
+
+    prediction_r = np.sqrt(predictions[:, 0] ** 2 + predictions[:, 1] ** 2)
+    target_r = np.sqrt(targets[:, 0] ** 2 + targets[:, 1] ** 2)
+    residual_r = prediction_r - target_r
+
+    errors_3d = np.linalg.norm(residuals, axis=1)
+
+    return VertexQuantities(
+        predictions=predictions,
+        targets=targets,
+        residuals=residuals,
+        residual_r=residual_r,
+        errors_3d=errors_3d,
+        prediction_r=prediction_r,
+        target_r=target_r,
+    )

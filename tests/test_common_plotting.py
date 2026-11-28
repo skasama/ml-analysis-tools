@@ -4,7 +4,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from analysis_tools.plotting.common import plot_histogram, plot_scatter, plot_series
+from analysis_tools.plotting.common import (
+    annotate_values,
+    plot_dependency,
+    plot_histogram,
+    plot_prediction_vs_truth,
+    plot_residual_distribution,
+    plot_scatter,
+    plot_series,
+)
 
 
 def test_plot_histogram_creates_figure_and_axes() -> None:
@@ -195,5 +203,288 @@ def test_plot_scatter_forwards_scatter_kwargs() -> None:
         collection.get_linewidths(),
         [0.5],
     )
+
+    plt.close(figure)
+
+
+def test_plot_prediction_vs_truth() -> None:
+    predictions = np.array([1.0, 2.0, 3.0])
+    targets = np.array([1.1, 1.9, 3.2])
+
+    figure, axis = plt.subplots()
+
+    returned_axis = plot_prediction_vs_truth(
+        predictions,
+        targets,
+        ax=axis,
+    )
+
+    assert returned_axis is axis
+    assert len(axis.collections) == 1
+    assert len(axis.lines) == 1
+
+    plt.close(figure)
+
+
+def test_plot_residual_distribution() -> None:
+    residuals = np.array([-1.0, 0.0, 1.0, 2.0])
+
+    figure, axis = plt.subplots()
+
+    returned_axis = plot_residual_distribution(
+        residuals,
+        ax=axis,
+        bins=4,
+        label="ML",
+    )
+
+    assert returned_axis is axis
+    assert len(axis.patches) > 0
+    assert len(axis.lines) == 1
+
+    legend_labels = axis.get_legend_handles_labels()[1]
+
+    assert legend_labels == ["ML, Bias: 0.5"]
+
+    plt.close(figure)
+
+
+def test_plot_residual_distribution_without_bias() -> None:
+    figure, axis = plt.subplots()
+
+    plot_residual_distribution(
+        np.array([-1.0, 0.0, 1.0]),
+        ax=axis,
+        label="Sample",
+        show_bias=False,
+    )
+
+    legend_labels = axis.get_legend_handles_labels()[1]
+
+    assert legend_labels == ["Sample"]
+
+    plt.close(figure)
+
+
+def test_plot_residual_distribution_without_zero_line() -> None:
+    figure, axis = plt.subplots()
+
+    plot_residual_distribution(
+        np.array([-1.0, 0.0, 1.0]),
+        ax=axis,
+        show_zero_line=False,
+    )
+
+    assert len(axis.lines) == 0
+
+    plt.close(figure)
+
+
+def test_plot_residual_distribution_rejects_multidimensional_input() -> None:
+    with pytest.raises(
+        ValueError,
+        match="one-dimensional",
+    ):
+        plot_residual_distribution(
+            np.array(
+                [
+                    [1.0, 2.0],
+                    [3.0, 4.0],
+                ]
+            )
+        )
+
+
+def test_plot_residual_distribution_rejects_nonfinite_input() -> None:
+    with pytest.raises(
+        ValueError,
+        match="finite",
+    ):
+        plot_residual_distribution(np.array([1.0, np.nan]))
+
+
+def test_plot_residual_distribution_with_resolution() -> None:
+    figure, axis = plt.subplots()
+
+    plot_residual_distribution(
+        np.array([-1.0, 0.0, 1.0]),
+        ax=axis,
+        label="ML",
+        resolution=1.25,
+        unit="cm",
+    )
+
+    labels = axis.get_legend_handles_labels()[1]
+
+    assert labels == ["ML, Bias: 0 cm, Resolution: 1.25 cm"]
+
+    plt.close(figure)
+
+
+def test_plot_dependency() -> None:
+    figure, axis = plt.subplots()
+
+    returned_axis = plot_dependency(
+        x=np.array([25.0, 75.0, 125.0]),
+        values=np.array([10.0, 8.0, 7.0]),
+        ax=axis,
+        label="ML",
+        color="tab:blue",
+        marker="o",
+    )
+
+    assert returned_axis is axis
+    assert len(axis.lines) == 1
+
+    labels = axis.get_legend_handles_labels()[1]
+
+    assert labels == ["ML"]
+
+    plt.close(figure)
+
+
+def test_plot_dependency_with_symmetric_errors() -> None:
+    figure, axis = plt.subplots()
+
+    returned_axis = plot_dependency(
+        x=np.array([25.0, 75.0, 125.0]),
+        values=np.array([10.0, 8.0, 7.0]),
+        errors=np.array([1.0, 0.8, 0.7]),
+        ax=axis,
+        marker="o",
+        capsize=2.0,
+    )
+
+    assert returned_axis is axis
+    assert len(axis.containers) == 1
+
+    plt.close(figure)
+
+
+def test_plot_dependency_with_asymmetric_errors() -> None:
+    figure, axis = plt.subplots()
+
+    plot_dependency(
+        x=np.array([25.0, 75.0]),
+        values=np.array([10.0, 8.0]),
+        errors=np.array(
+            [
+                [0.5, 0.4],
+                [1.0, 0.8],
+            ]
+        ),
+        ax=axis,
+        marker="o",
+    )
+
+    assert len(axis.containers) == 1
+
+    plt.close(figure)
+
+
+def test_plot_dependency_ignores_nonfinite_values() -> None:
+    figure, axis = plt.subplots()
+
+    plot_dependency(
+        x=np.array([25.0, 75.0, 125.0]),
+        values=np.array([10.0, np.nan, 7.0]),
+        ax=axis,
+        marker="o",
+    )
+
+    line = axis.lines[0]
+
+    np.testing.assert_allclose(
+        line.get_xdata(),
+        [25.0, 125.0],
+    )
+
+    np.testing.assert_allclose(
+        line.get_ydata(),
+        [10.0, 7.0],
+    )
+
+    plt.close(figure)
+
+
+def test_plot_dependency_rejects_length_mismatch() -> None:
+    with pytest.raises(
+        ValueError,
+        match="same length",
+    ):
+        plot_dependency(
+            x=np.array([1.0, 2.0]),
+            values=np.array([1.0]),
+        )
+
+
+def test_plot_dependency_rejects_invalid_error_shape() -> None:
+    with pytest.raises(
+        ValueError,
+        match="shape",
+    ):
+        plot_dependency(
+            x=np.array([1.0, 2.0]),
+            values=np.array([1.0, 2.0]),
+            errors=np.ones((2, 2, 2)),
+        )
+
+
+def test_plot_dependency_rejects_negative_errors() -> None:
+    with pytest.raises(
+        ValueError,
+        match="negative",
+    ):
+        plot_dependency(
+            x=np.array([1.0, 2.0]),
+            values=np.array([1.0, 2.0]),
+            errors=np.array([0.1, -0.2]),
+        )
+
+
+def test_annotate_values() -> None:
+    figure, axis = plt.subplots()
+
+    returned_axis = annotate_values(
+        x=np.array([25.0, 75.0]),
+        values=np.array([10.25, 8.5]),
+        ax=axis,
+        fmt=".2f",
+    )
+
+    assert returned_axis is axis
+    assert len(axis.texts) == 2
+    assert axis.texts[0].get_text() == "10.25"
+    assert axis.texts[1].get_text() == "8.50"
+
+    plt.close(figure)
+
+
+def test_annotate_values_ignores_nonfinite_values() -> None:
+    figure, axis = plt.subplots()
+
+    annotate_values(
+        x=np.array([25.0, 75.0, 125.0]),
+        values=np.array([10.0, np.nan, 7.0]),
+        ax=axis,
+    )
+
+    assert len(axis.texts) == 2
+
+    plt.close(figure)
+
+
+def test_annotate_values_rejects_length_mismatch() -> None:
+    figure, axis = plt.subplots()
+
+    with pytest.raises(
+        ValueError,
+        match="same length",
+    ):
+        annotate_values(
+            x=np.array([25.0, 75.0]),
+            values=np.array([10.0]),
+            ax=axis,
+        )
 
     plt.close(figure)
