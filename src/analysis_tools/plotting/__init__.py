@@ -4,6 +4,7 @@ from analysis_tools.plotting.classification import (
     plot_confusion_matrix,
 )
 from analysis_tools.plotting.common import (
+    annotate_values,
     plot_dependency,
     plot_event_counts,
     plot_prediction_vs_truth,
@@ -40,6 +41,7 @@ __all__ = [
     "plot_confusion_matrix",
     "plot_prediction_vs_truth",
     "plot_residual_distribution",
+    "annotate_values",
     "plot_dependency",
     "plot_event_counts",
     "plot_direction_errors",
