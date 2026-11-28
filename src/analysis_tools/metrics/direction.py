@@ -72,3 +72,24 @@ def direction_errors(
         angles = np.degrees(angles)
 
     return angles
+
+
+def wrapped_angle_residuals(
+    predictions: ArrayLike,
+    targets: ArrayLike,
+) -> NDArray[np.float64]:
+    """Return signed prediction-minus-target angle differences in [-pi, pi]."""
+    prediction_array = np.asarray(predictions, dtype=float)
+    target_array = np.asarray(targets, dtype=float)
+
+    if prediction_array.ndim != 1 or target_array.ndim != 1:
+        raise ValueError("predictions and targets must be one-dimensional.")
+
+    validate_same_length(
+        prediction_array,
+        target_array,
+        names=("predictions", "targets"),
+    )
+
+    difference = prediction_array - target_array
+    return np.arctan2(np.sin(difference), np.cos(difference))

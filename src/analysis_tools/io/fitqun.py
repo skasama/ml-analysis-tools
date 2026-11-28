@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
 from analysis_tools.data import (
     as_integer_array,
@@ -11,6 +11,62 @@ from analysis_tools.data import (
     validate_same_length,
 )
 from analysis_tools.io.hdf5 import load_hdf5
+
+
+def fitqun_electron_muon_score(
+    electron_nll: ArrayLike,
+    muon_nll: ArrayLike,
+    electron_momentum: ArrayLike,
+    *,
+    momentum_weight: float = 0.2,
+) -> NDArray[np.float64]:
+    """Calculate the fiTQun electron-versus-muon score."""
+    electron = as_scalar_array(
+        electron_nll,
+        name="electron_nll",
+    ).astype(float)
+    muon = as_scalar_array(
+        muon_nll,
+        name="muon_nll",
+    ).astype(float)
+    momentum = as_scalar_array(
+        electron_momentum,
+        name="electron_momentum",
+    ).astype(float)
+
+    validate_same_length(
+        electron,
+        muon,
+        momentum,
+        names=("electron_nll", "muon_nll", "electron_momentum"),
+    )
+
+    return muon - electron - momentum_weight * momentum
+
+
+def fitqun_electron_muon_predictions(
+    electron_nll: ArrayLike,
+    muon_nll: ArrayLike,
+    electron_momentum: ArrayLike,
+    *,
+    momentum_weight: float = 0.2,
+    threshold: float = 0.0,
+    electron_label: int = 1,
+    muon_label: int = 0,
+) -> NDArray[np.int64]:
+    """Calculate fiTQun electron-versus-muon predicted labels."""
+    score = fitqun_electron_muon_score(
+        electron_nll,
+        muon_nll,
+        electron_momentum,
+        momentum_weight=momentum_weight,
+    )
+
+    return np.where(
+        score > threshold,
+        electron_label,
+        muon_label,
+    ).astype(np.int64)
 
 
 @dataclass(frozen=True)
@@ -56,7 +112,11 @@ class FitQunData:
     @property
     def electron_muon_score(self) -> NDArray[np.float64]:
         """Return the standard electron-versus-muon fiTQun score."""
-        return self.muon_nll - self.electron_nll - 0.2 * self.electron_momentum
+        return fitqun_electron_muon_score(
+            self.electron_nll,
+            self.muon_nll,
+            self.electron_momentum,
+        )
 
     def electron_muon_predictions(
         self,
@@ -66,11 +126,14 @@ class FitQunData:
         threshold: float = 0.0,
     ) -> NDArray[np.int64]:
         """Classify events using the electron-muon fiTQun score."""
-        return np.where(
-            self.electron_muon_score > threshold,
-            electron_label,
-            muon_label,
-        ).astype(np.int64)
+        return fitqun_electron_muon_predictions(
+            self.electron_nll,
+            self.muon_nll,
+            self.electron_momentum,
+            threshold=threshold,
+            electron_label=electron_label,
+            muon_label=muon_label,
+        )
 
 
 def load_fitqun(

@@ -11,6 +11,8 @@ from analysis_tools.io.csv import (
 from analysis_tools.io.fitqun import (
     FitQunData,
     FitQunKeys,
+    fitqun_electron_muon_predictions,
+    fitqun_electron_muon_score,
     load_fitqun,
 )
 from analysis_tools.io.hdf5 import (
@@ -26,7 +28,10 @@ from analysis_tools.io.numpy import (
     save_npz,
 )
 from analysis_tools.io.prediction import (
+    MLRunConfig,
+    MLRunData,
     PredictionData,
+    load_ml_run,
     load_prediction_data,
 )
 
@@ -47,7 +52,12 @@ __all__ = [
     "save_csv",
     "FitQunData",
     "FitQunKeys",
+    "fitqun_electron_muon_score",
+    "fitqun_electron_muon_predictions",
     "load_fitqun",
     "PredictionData",
+    "MLRunConfig",
+    "MLRunData",
     "load_prediction_data",
+    "load_ml_run",
 ]

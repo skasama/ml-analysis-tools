@@ -4,6 +4,7 @@ import pytest
 from analysis_tools.metrics.direction import (
     direction_cosines,
     direction_errors,
+    wrapped_angle_residuals,
 )
 
 
@@ -79,4 +80,21 @@ def test_direction_errors_reject_zero_vector() -> None:
         direction_errors(
             predictions=[[0.0, 0.0, 0.0]],
             targets=[[1.0, 0.0, 0.0]],
+        )
+
+
+def test_wrapped_angle_residuals_use_shortest_signed_difference() -> None:
+    actual = wrapped_angle_residuals(
+        predictions=[-np.pi + 0.1, np.pi - 0.1],
+        targets=[np.pi - 0.1, -np.pi + 0.1],
+    )
+
+    np.testing.assert_allclose(actual, [0.2, -0.2])
+
+
+def test_wrapped_angle_residuals_rejects_non_one_dimensional_inputs() -> None:
+    with pytest.raises(ValueError, match="one-dimensional"):
+        wrapped_angle_residuals(
+            predictions=[[0.0]],
+            targets=[[0.0]],
         )

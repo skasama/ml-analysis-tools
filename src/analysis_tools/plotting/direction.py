@@ -95,6 +95,21 @@ def plot_direction_errors(
     )
 
 
+def plot_direction_errors_ax(
+    errors: ArrayLike,
+    *,
+    ax: Axes | None = None,
+    **kwargs: Any,
+) -> Axes:
+    """Plot direction errors and return only the Matplotlib Axes."""
+    _, returned_ax = plot_direction_errors(
+        errors,
+        ax=ax,
+        **kwargs,
+    )
+    return returned_ax
+
+
 def plot_direction_resolution(
     x: ArrayLike,
     resolution: ArrayLike,

@@ -1,11 +1,62 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
 from analysis_tools.data import as_integer_array
+from analysis_tools.io.hdf5 import load_hdf5
 from analysis_tools.io.numpy import load_npy
+
+
+@dataclass(frozen=True)
+class MLRunConfig:
+    """Paths defining one prediction run and its source HDF5 events."""
+
+    name: str
+    source_hdf5: str | Path
+    predictions_path: str | Path
+    targets_path: str | Path
+    indices_path: str | Path | None = None
+    color: str | None = None
+
+
+@dataclass(frozen=True)
+class MLRunData:
+    """One ML run with predictions, targets, indices, and source arrays."""
+
+    name: str
+    predictions: PredictionData
+    source: dict[str, np.ndarray]
+    color: str | None = None
+
+    def __post_init__(self) -> None:
+        for key, values in self.source.items():
+            if values.ndim == 0 or len(values) != self.event_count:
+                raise ValueError(
+                    f"Source dataset {key!r} must contain "
+                    f"{self.event_count} selected events."
+                )
+
+    @property
+    def event_count(self) -> int:
+        return self.predictions.event_count
+
+    def select(
+        self,
+        selection: ArrayLike,
+    ) -> MLRunData:
+        selected = np.asarray(selection)
+
+        return MLRunData(
+            name=self.name,
+            predictions=self.predictions.select(selected),
+            source={key: values[selected] for key, values in self.source.items()},
+            color=self.color,
+        )
 
 
 @dataclass(frozen=True)
@@ -35,7 +86,7 @@ class PredictionData:
     def select(
         self,
         selection: np.ndarray,
-    ) -> "PredictionData":
+    ) -> PredictionData:
         """
 
         Return data selected by an index or Boolean array.
@@ -132,4 +183,40 @@ def load_prediction_data(
         predictions=predictions,
         targets=targets,
         indices=indices,
+    )
+
+
+def load_ml_run(
+    config: MLRunConfig,
+    hdf5_keys: Sequence[str],
+) -> MLRunData:
+    """Load one ML run and source-HDF5 arrays aligned by indices."""
+    if not hdf5_keys:
+        raise ValueError("At least one HDF5 dataset key is required.")
+
+    if config.indices_path is None:
+        raise ValueError(
+            "MLRunConfig.indices_path is required to align source HDF5 events."
+        )
+
+    prediction_data = load_prediction_data(
+        config.predictions_path,
+        config.targets_path,
+        config.indices_path,
+    )
+
+    if prediction_data.indices is None:
+        raise ValueError("ML run indices could not be loaded.")
+
+    source = load_hdf5(
+        config.source_hdf5,
+        keys=hdf5_keys,
+        indices=prediction_data.indices,
+    )
+
+    return MLRunData(
+        name=config.name,
+        predictions=prediction_data,
+        source=source,
+        color=config.color,
     )

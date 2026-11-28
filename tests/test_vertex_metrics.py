@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from analysis_tools.analysis.vertex_regression import (
+    analyze_vertex_regression,
     calculate_vertex_quantities,
 )
 from analysis_tools.metrics.vertex import (
@@ -56,6 +57,21 @@ def test_vertex_metrics_accept_singleton_dimension() -> None:
     actual = vertex_errors(predictions, targets)
 
     np.testing.assert_allclose(actual, [5.0])
+
+
+def test_vertex_result_to_quantities() -> None:
+    result = analyze_vertex_regression(
+        predictions=[[1.0, 2.0, 3.0]],
+        targets=[[0.0, 1.0, 2.0]],
+        detector_radius=100.0,
+        detector_half_height=100.0,
+    )
+
+    quantities = result.to_quantities()
+
+    np.testing.assert_allclose(quantities.residual_x, [1.0])
+    np.testing.assert_allclose(quantities.residual_y, [1.0])
+    np.testing.assert_allclose(quantities.residual_z, [1.0])
 
 
 def test_vertex_residuals_reject_length_mismatch() -> None:

@@ -3,8 +3,23 @@ import numpy as np
 
 from analysis_tools.plotting.direction import (
     plot_direction_errors,
+    plot_direction_errors_ax,
     plot_direction_resolution,
 )
+
+
+def test_plot_direction_errors_ax_returns_existing_axes() -> None:
+    figure, axis = plt.subplots()
+
+    returned = plot_direction_errors_ax(
+        [1.0, 2.0, 3.0],
+        ax=axis,
+    )
+
+    assert returned is axis
+    assert axis.figure is figure
+
+    plt.close(figure)
 
 
 def test_plot_direction_errors_creates_figure_and_axes() -> None:

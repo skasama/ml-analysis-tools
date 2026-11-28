@@ -44,6 +44,71 @@ def test_load_hdf5(hdf5_path) -> None:
     assert arrays["multi/positions"].shape == (3, 3)
 
 
+def test_load_hdf5_with_indices(hdf5_path) -> None:
+    arrays = load_hdf5(
+        hdf5_path,
+        keys=["multi/labels", "multi/positions", "fitqun/e_1rnll"],
+        indices=[2, 0],
+    )
+
+    np.testing.assert_array_equal(arrays["multi/labels"], [2, 0])
+    np.testing.assert_array_equal(
+        arrays["multi/positions"],
+        np.array([[6, 7, 8], [0, 1, 2]]),
+    )
+    np.testing.assert_array_equal(
+        arrays["fitqun/e_1rnll"],
+        [3.0, 1.0],
+    )
+
+
+def test_load_hdf5_rejects_negative_indices(hdf5_path) -> None:
+    with pytest.raises(ValueError, match="non-negative"):
+        load_hdf5(
+            hdf5_path,
+            keys=["multi/labels"],
+            indices=[0, -1],
+        )
+
+
+def test_load_hdf5_rejects_out_of_range_indices(hdf5_path) -> None:
+    with pytest.raises(IndexError, match="event count"):
+        load_hdf5(
+            hdf5_path,
+            keys=["multi/labels"],
+            indices=[0, 3],
+        )
+
+
+def test_load_hdf5_rejects_scalar_dataset_with_indices(tmp_path) -> None:
+    path = tmp_path / "scalar.hy"
+
+    with h5py.File(path, "w") as file:
+        file.create_dataset("values", data=1.0)
+
+    with pytest.raises(ValueError, match="event dimension"):
+        load_hdf5(
+            path,
+            keys=["values"],
+            indices=[0],
+        )
+
+
+def test_load_hdf5_rejects_misaligned_event_datasets(tmp_path) -> None:
+    path = tmp_path / "misaligned.hy"
+
+    with h5py.File(path, "w") as file:
+        file.create_dataset("multi/labels", data=[0, 1, 2])
+        file.create_dataset("multi/positions", data=np.zeros((2, 3)))
+
+    with pytest.raises(ValueError, match="same event count"):
+        load_hdf5(
+            path,
+            keys=["multi/labels", "multi/positions"],
+            indices=[0, 1],
+        )
+
+
 def test_load_hdf5_rejects_missing_dataset(hdf5_path) -> None:
     with pytest.raises(KeyError, match="missing"):
         load_hdf5(hdf5_path, keys=["missing"])

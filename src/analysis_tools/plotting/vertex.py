@@ -99,6 +99,21 @@ def plot_vertex_errors(
     )
 
 
+def plot_vertex_errors_ax(
+    errors: ArrayLike,
+    *,
+    ax: Axes | None = None,
+    **kwargs: Any,
+) -> Axes:
+    """Plot vertex errors and return only the Matplotlib Axes."""
+    _, returned_ax = plot_vertex_errors(
+        errors,
+        ax=ax,
+        **kwargs,
+    )
+    return returned_ax
+
+
 def plot_vertex_resolution(
     x: ArrayLike,
     resolution: ArrayLike,

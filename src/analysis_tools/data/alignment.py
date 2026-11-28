@@ -1,7 +1,10 @@
 import numpy as np
 from numpy.typing import NDArray
 
-from analysis_tools.data.models import EventIndex
+from analysis_tools.data.models import (
+    EventIndex,
+    MatchedComparisonSample,
+)
 
 
 def find_duplicate_keys(index: EventIndex) -> NDArray[np.bool_]:
@@ -59,4 +62,15 @@ def validate_aligned(
         f"{reference_key['event_id']}), "
         f"candidate=({candidate_key['file_id']}, "
         f"{candidate_key['event_id']})."
+    )
+
+
+def validate_matched_samples(
+    reference: MatchedComparisonSample,
+    candidate: MatchedComparisonSample,
+) -> None:
+    """Validate that two matched samples contain the same event keys."""
+    validate_aligned(
+        reference.event_index,
+        candidate.event_index,
     )

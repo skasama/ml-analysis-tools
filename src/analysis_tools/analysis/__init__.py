@@ -1,3 +1,9 @@
+from analysis_tools.analysis.evaluation import (
+    DependencyEvaluation,
+    MetricResult,
+    evaluate,
+    evaluate_dependency,
+)
 from analysis_tools.analysis.vertex_regression import (
     VertexQuantities,
     VertexRegressionResult,
@@ -10,4 +16,8 @@ __all__ = [
     "analyze_vertex_regression",
     "VertexQuantities",
     "calculate_vertex_quantities",
+    "DependencyEvaluation",
+    "MetricResult",
+    "evaluate",
+    "evaluate_dependency",
 ]

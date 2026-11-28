@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Generic, TypeVar
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -77,3 +78,23 @@ class EventIndex:
         keys["event_id"] = self.event_ids
 
         return keys
+
+
+T = TypeVar("T")
+
+
+@dataclass(frozen=True)
+class IndependentComparisonSample(Generic[T]):
+    """A sample compared without event matching."""
+
+    name: str
+    quantities: T
+
+
+@dataclass(frozen=True)
+class MatchedComparisonSample(Generic[T]):
+    """A sample whose events are aligned by source event keys."""
+
+    name: str
+    quantities: T
+    event_index: EventIndex

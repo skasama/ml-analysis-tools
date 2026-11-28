@@ -1,6 +1,7 @@
 from analysis_tools.data.alignment import (
     find_duplicate_keys,
     validate_aligned,
+    validate_matched_samples,
     validate_unique_keys,
 )
 from analysis_tools.data.arrays import (
@@ -16,7 +17,11 @@ from analysis_tools.data.binning import (
 from analysis_tools.data.hits import (
     hit_counts_from_indices,
 )
-from analysis_tools.data.models import EventIndex
+from analysis_tools.data.models import (
+    EventIndex,
+    IndependentComparisonSample,
+    MatchedComparisonSample,
+)
 from analysis_tools.data.selection import (
     CutFlowEntry,
     EventSelection,
@@ -28,8 +33,11 @@ from analysis_tools.data.selection import (
 
 __all__ = [
     "EventIndex",
+    "IndependentComparisonSample",
+    "MatchedComparisonSample",
     "find_duplicate_keys",
     "validate_aligned",
+    "validate_matched_samples",
     "validate_unique_keys",
     "apply_mask",
     "apply_mask_to_mapping",

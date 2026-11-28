@@ -1,8 +1,12 @@
+import h5py
 import numpy as np
 import pytest
 
+from analysis_tools.data import EventSelection
 from analysis_tools.io import (
+    MLRunConfig,
     PredictionData,
+    load_ml_run,
     load_prediction_data,
 )
 
@@ -197,3 +201,66 @@ def test_load_prediction_data_rejects_duplicate_indices(
             targets_path,
             indices_path,
         )
+
+
+def test_load_ml_run(tmp_path) -> None:
+    source_path = tmp_path / "source.hy"
+    predictions_path = tmp_path / "predictions.npy"
+    targets_path = tmp_path / "targets.npy"
+    indices_path = tmp_path / "indices.npy"
+
+    with h5py.File(source_path, "w") as file:
+        file.create_dataset(
+            "multi/labels",
+            data=[0, 1, 2],
+        )
+        file.create_dataset(
+            "multi/positions",
+            data=np.arange(9).reshape(3, 3),
+        )
+
+    np.save(predictions_path, [[1.0], [2.0]])
+    np.save(targets_path, [[0.0], [1.0]])
+    np.save(indices_path, [2, 0])
+
+    run = load_ml_run(
+        MLRunConfig(
+            name="ML",
+            source_hdf5=source_path,
+            predictions_path=predictions_path,
+            targets_path=targets_path,
+            indices_path=indices_path,
+            color="tab:blue",
+        ),
+        hdf5_keys=["multi/labels", "multi/positions"],
+    )
+
+    assert run.event_count == 2
+    assert run.name == "ML"
+    assert run.color == "tab:blue"
+    np.testing.assert_array_equal(run.predictions.indices, [2, 0])
+    np.testing.assert_array_equal(run.source["multi/labels"], [2, 0])
+    np.testing.assert_array_equal(
+        run.source["multi/positions"],
+        np.array([[6, 7, 8], [0, 1, 2]]),
+    )
+
+    selection = EventSelection(run.event_count)
+    selection.add("Selected events", np.array([False, True]))
+    selected = run.select(selection.mask)
+
+    assert selected.event_count == 1
+    np.testing.assert_array_equal(selected.predictions.indices, [0])
+    np.testing.assert_array_equal(selected.source["multi/labels"], [0])
+
+
+def test_load_ml_run_requires_indices(tmp_path) -> None:
+    config = MLRunConfig(
+        name="ML",
+        source_hdf5=tmp_path / "source.hy",
+        predictions_path=tmp_path / "predictions.npy",
+        targets_path=tmp_path / "targets.npy",
+    )
+
+    with pytest.raises(ValueError, match="indices_path is required"):
+        load_ml_run(config, hdf5_keys=["multi/labels"])

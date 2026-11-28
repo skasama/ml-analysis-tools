@@ -21,6 +21,7 @@ from analysis_tools.metrics.common import (
 from analysis_tools.metrics.direction import (
     direction_cosines,
     direction_errors,
+    wrapped_angle_residuals,
 )
 from analysis_tools.metrics.energy import (
     energy_residuals,
@@ -66,6 +67,7 @@ __all__ = [
     "threshold_metrics",
     "direction_cosines",
     "direction_errors",
+    "wrapped_angle_residuals",
     "energy_residuals",
     "fractional_energy_residuals",
     "bias_magnitude",

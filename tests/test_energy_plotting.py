@@ -5,8 +5,23 @@ import pytest
 from analysis_tools.plotting.energy import (
     plot_energy_bias,
     plot_energy_residuals,
+    plot_energy_residuals_ax,
     plot_energy_resolution,
 )
+
+
+def test_plot_energy_residuals_ax_returns_existing_axes() -> None:
+    figure, axis = plt.subplots()
+
+    returned = plot_energy_residuals_ax(
+        [-10.0, 0.0, 10.0],
+        ax=axis,
+    )
+
+    assert returned is axis
+    assert axis.figure is figure
+
+    plt.close(figure)
 
 
 def test_plot_energy_residuals_creates_figure_and_axes() -> None:

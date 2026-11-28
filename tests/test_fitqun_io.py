@@ -4,6 +4,8 @@ import pytest
 
 from analysis_tools.io.fitqun import (
     FitQunKeys,
+    fitqun_electron_muon_predictions,
+    fitqun_electron_muon_score,
     load_fitqun,
 )
 
@@ -90,6 +92,24 @@ def test_fitqun_electron_muon_score(fitqun_path) -> None:
     np.testing.assert_array_equal(
         data.electron_muon_predictions(),
         [0, 1, 1],
+    )
+
+
+def test_explicit_fitqun_electron_muon_functions() -> None:
+    score = fitqun_electron_muon_score(
+        electron_nll=[10.0, 5.0],
+        muon_nll=[2.0, 10.0],
+        electron_momentum=[10.0, 10.0],
+    )
+
+    np.testing.assert_allclose(score, [-10.0, 3.0])
+    np.testing.assert_array_equal(
+        fitqun_electron_muon_predictions(
+            electron_nll=[10.0, 5.0],
+            muon_nll=[2.0, 10.0],
+            electron_momentum=[10.0, 10.0],
+        ),
+        [0, 1],
     )
 
 

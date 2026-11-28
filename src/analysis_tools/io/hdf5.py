@@ -5,6 +5,8 @@ import h5py
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from analysis_tools.data.arrays import as_integer_array
+
 
 def list_hdf5_datasets(path: str | Path) -> list[str]:
     """
@@ -37,6 +39,8 @@ def list_hdf5_datasets(path: str | Path) -> list[str]:
 def load_hdf5(
     path: str | Path,
     keys: Sequence[str],
+    *,
+    indices: ArrayLike | None = None,
 ) -> dict[str, NDArray]:
     """
 
@@ -48,6 +52,9 @@ def load_hdf5(
         Path to the HDF5 file.
     keys : Sequence[str]
         A sequence of dataset keys to be loaded from the HDF5 file.
+    indices
+        Optional source-event indices. When provided, each selected dataset
+        is loaded in the requested row order.
 
     Returns
     -------
@@ -67,7 +74,19 @@ def load_hdf5(
     if not keys:
         raise ValueError("At least one dataset key is required.")
 
+    selected_indices = None
+
+    if indices is not None:
+        selected_indices = as_integer_array(
+            indices,
+            name="indices",
+        )
+
+        if np.any(selected_indices < 0):
+            raise ValueError("indices must be non-negative.")
+
     arrays: dict[str, NDArray] = {}
+    source_event_count: int | None = None
 
     with h5py.File(path, "r") as file:
         missing = {key for key in keys if key not in file}
@@ -84,7 +103,29 @@ def load_hdf5(
             if not isinstance(item, h5py.Dataset):
                 raise TypeError(f"{key!r} is not a dataset.")
 
-            arrays[key] = np.asarray(item)
+            values = np.asarray(item)
+
+            if selected_indices is not None:
+                if values.ndim == 0:
+                    raise ValueError(f"{key!r} must have an event dimension.")
+
+                if source_event_count is None:
+                    source_event_count = len(values)
+                elif len(values) != source_event_count:
+                    raise ValueError(
+                        "Selected HDF5 datasets must have the same event count: "
+                        f"{key!r} has {len(values)}, expected "
+                        f"{source_event_count}."
+                    )
+
+                if np.any(selected_indices >= len(values)):
+                    raise IndexError(
+                        f"indices exceed the event count for {key!r}: {len(values)}."
+                    )
+
+                values = values[selected_indices]
+
+            arrays[key] = values
 
         return arrays
 

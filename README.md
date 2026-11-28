@@ -81,6 +81,66 @@ Each example contains editable settings for:
 
 ## Python API
 
+### Evaluate and plot in a few lines
+
+```python
+import numpy as np
+
+from analysis_tools import (
+    calculate_vertex_quantities,
+    evaluate_dependency,
+    plot_evaluation,
+)
+
+quantities = calculate_vertex_quantities(predictions, targets)
+
+evaluation = evaluate_dependency(
+    wall,
+    quantities.errors_3d,
+    edges=[0.0, 50.0, 100.0, 150.0],
+    metric=np.mean,
+    minimum_events=10,
+)
+
+axis = plot_evaluation(
+    evaluation,
+    label="ML",
+    color="tab:blue",
+)
+axis.grid(alpha=0.25)
+```
+
+A complete runnable example is available at
+`examples/simple/evaluate_results.py`.
+
+For ML outputs that must stay aligned to their source HDF5 rows:
+
+```python
+from analysis_tools import MLRunConfig, load_ml_run
+
+run = load_ml_run(
+    MLRunConfig(
+        name="ML",
+        source_hdf5="data/source.hy",
+        predictions_path="outputs/preds.npy",
+        targets_path="outputs/targets.npy",
+        indices_path="outputs/indices.npy",
+        color="tab:blue",
+    ),
+    hdf5_keys=["multi/labels", "multi/positions", "multi/energies"],
+)
+
+labels = run.source["multi/labels"]
+selected_run = run.select(selection.mask)
+```
+
+`hdf5_keys` remain full HDF5 paths. `run.select()` applies one sample's
+Boolean or integer selection to predictions, targets, indices, and all loaded
+source arrays together. Direction quantities return theta, phi, their residuals,
+and `opening_angles` in degrees by default. Phi residuals use the shortest
+signed difference in [-180, 180] degrees. Pass
+`calculate_direction_quantities(..., degrees=False)` for radians.
+
 ### Load NumPy arrays
 
 ```python

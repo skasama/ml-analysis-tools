@@ -96,6 +96,21 @@ def plot_energy_residuals(
     )
 
 
+def plot_energy_residuals_ax(
+    residuals: ArrayLike,
+    *,
+    ax: Axes | None = None,
+    **kwargs: Any,
+) -> Axes:
+    """Plot energy residuals and return only the Matplotlib Axes."""
+    _, returned_ax = plot_energy_residuals(
+        residuals,
+        ax=ax,
+        **kwargs,
+    )
+    return returned_ax
+
+
 def plot_energy_bias(
     x: ArrayLike,
     bias: ArrayLike,

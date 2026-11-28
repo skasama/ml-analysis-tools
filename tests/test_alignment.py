@@ -4,9 +4,47 @@ import pytest
 from analysis_tools.data.alignment import (
     find_duplicate_keys,
     validate_aligned,
+    validate_matched_samples,
     validate_unique_keys,
 )
-from analysis_tools.data.models import EventIndex
+from analysis_tools.data.models import (
+    EventIndex,
+    IndependentComparisonSample,
+    MatchedComparisonSample,
+)
+
+
+def test_comparison_sample_types() -> None:
+    independent = IndependentComparisonSample(
+        name="ML",
+        quantities={"values": np.array([1.0, 2.0])},
+    )
+
+    event_index = EventIndex.from_arrays([10, 11], [20, 21])
+    matched = MatchedComparisonSample(
+        name="fiTQun",
+        quantities={"values": np.array([1.0, 2.0])},
+        event_index=event_index,
+    )
+
+    assert independent.name == "ML"
+    assert matched.event_index is event_index
+
+
+def test_validate_matched_samples() -> None:
+    event_index = EventIndex.from_arrays([10, 11], [20, 21])
+    reference = MatchedComparisonSample(
+        name="ML",
+        quantities=None,
+        event_index=event_index,
+    )
+    candidate = MatchedComparisonSample(
+        name="fiTQun",
+        quantities=None,
+        event_index=event_index,
+    )
+
+    validate_matched_samples(reference, candidate)
 
 
 def test_find_duplicate_keys() -> None:
